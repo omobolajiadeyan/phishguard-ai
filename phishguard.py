@@ -41,14 +41,41 @@ VERDICT_ICON = {
     "SAFE":       "SAFE",
 }
 
+PLAIN_OUTPUT = False
+
+
+def set_plain_output(enabled: bool) -> None:
+    global PLAIN_OUTPUT
+    PLAIN_OUTPUT = enabled
+
+
+def style(text: str, *codes: str) -> str:
+    if PLAIN_OUTPUT:
+        return text
+    return "".join(codes) + text + RESET
+
+
+def separator() -> str:
+    return "-" * 60 if PLAIN_OUTPUT else "─" * 60
+
 
 def probability_bar(prob: float) -> str:
     filled = round(prob * 20)
+    if PLAIN_OUTPUT:
+        return "#" * filled + "-" * (20 - filled) + f"  {prob*100:.1f}%"
+
     color = RED if prob >= 0.75 else YELLOW if prob >= THRESHOLD else GREEN
     return color + "█" * filled + GRAY + "░" * (20 - filled) + RESET + f"  {prob*100:.1f}%"
 
 
 def print_banner():
+    if PLAIN_OUTPUT:
+        print("""
+  PHISHGUARD AI
+  Explainable phishing detection | github.com/omobolajiadeyan
+""")
+        return
+
     print(f"""
 {CYAN}{BOLD}
   ██████╗ ██╗  ██╗██╗███████╗██╗  ██╗ ██████╗ ██╗   ██╗ █████╗ ██████╗ ██████╗      █████╗ ██╗
@@ -64,17 +91,16 @@ def print_banner():
 def analyze_url(url: str, verbose: bool = False) -> dict:
     prob, features = score_url(url)
     verdict = classify(prob)
-    color = VERDICT_COLOR[verdict]
 
-    print(f"\n{'─'*60}")
+    print(f"\n{separator()}")
     print(f"  URL     : {url}")
-    print(f"  Verdict : {color}{BOLD}{verdict}{RESET}")
+    print(f"  Verdict : {style(verdict, VERDICT_COLOR[verdict], BOLD)}")
     print(f"  Risk    : {probability_bar(prob)}")
 
     if verbose:
-        print(f"\n  {GRAY}Feature breakdown:{RESET}")
+        print(f"\n  {style('Feature breakdown:', GRAY)}")
         for feat, val in features.items():
-            flag = f"{RED}*{RESET}" if val > 0 and feat != "has_https" else ""
+            flag = style("*", RED) if val > 0 and feat != "has_https" else ""
             print(f"    {feat:<22}: {val}  {flag}")
 
     return {"url": url, "verdict": verdict, "probability": prob, "features": features}
@@ -83,15 +109,14 @@ def analyze_url(url: str, verbose: bool = False) -> dict:
 def analyze_email(subject: str, body: str, verbose: bool = False) -> dict:
     prob, features = score_email(subject, body)
     verdict = classify(prob)
-    color = VERDICT_COLOR[verdict]
 
-    print(f"\n{'─'*60}")
+    print(f"\n{separator()}")
     print(f"  Subject : {subject}")
-    print(f"  Verdict : {color}{BOLD}{verdict}{RESET}")
+    print(f"  Verdict : {style(verdict, VERDICT_COLOR[verdict], BOLD)}")
     print(f"  Risk    : {probability_bar(prob)}")
 
     if verbose:
-        print(f"\n  {GRAY}Feature breakdown:{RESET}")
+        print(f"\n  {style('Feature breakdown:', GRAY)}")
         for feat, val in features.items():
             print(f"    {feat:<26}: {val}")
 
@@ -104,10 +129,10 @@ def batch_scan_urls(filepath: str, verbose: bool = False) -> list:
         with open(filepath) as f:
             urls = [line.strip() for line in f if line.strip() and not line.startswith("#")]
     except FileNotFoundError:
-        print(f"{RED}Error: File '{filepath}' not found.{RESET}")
+        print(style(f"Error: File '{filepath}' not found.", RED))
         sys.exit(1)
 
-    print(f"{CYAN}Scanning {len(urls)} URLs...{RESET}")
+    print(style(f"Scanning {len(urls)} URLs...", CYAN))
     phishing_count = 0
     for url in urls:
         result = analyze_url(url, verbose=verbose)
@@ -115,7 +140,7 @@ def batch_scan_urls(filepath: str, verbose: bool = False) -> list:
         if result["verdict"] == "PHISHING":
             phishing_count += 1
 
-    print(f"\n{BOLD}Summary: {phishing_count}/{len(urls)} URLs classified as PHISHING{RESET}")
+    print(style(f"\nSummary: {phishing_count}/{len(urls)} URLs classified as PHISHING", BOLD))
     return results
 
 
@@ -126,6 +151,12 @@ def add_output_arguments(parser: argparse.ArgumentParser) -> None:
         choices=("json", "sarif"),
         default="json",
         help="Output format used with --output (default: json)",
+    )
+    parser.add_argument(
+        "--plain",
+        "--no-unicode",
+        action="store_true",
+        help="Use ASCII-only output without color or Unicode decorations.",
     )
 
 
@@ -164,6 +195,8 @@ Examples:
     add_output_arguments(batch_parser)
 
     args = parser.parse_args()
+    set_plain_output(args.plain)
+
     if args.format == "sarif" and not args.output:
         parser.error("--format sarif requires --output")
 
@@ -173,19 +206,19 @@ Examples:
         result = analyze_url(args.target, verbose=args.verbose)
         if args.output:
             write_report(result, args.output, args.format)
-            print(f"\n{GREEN}Result saved to {args.output}{RESET}")
+            print(style(f"\nResult saved to {args.output}", GREEN))
 
     elif args.command == "email":
         result = analyze_email(args.subject, args.body, verbose=args.verbose)
         if args.output:
             write_report(result, args.output, args.format)
-            print(f"\n{GREEN}Result saved to {args.output}{RESET}")
+            print(style(f"\nResult saved to {args.output}", GREEN))
 
     elif args.command == "batch":
         results = batch_scan_urls(args.file, verbose=args.verbose)
         if args.output:
             write_report(results, args.output, args.format)
-            print(f"{GREEN}Results saved to {args.output}{RESET}")
+            print(style(f"Results saved to {args.output}", GREEN))
 
     print()
 
