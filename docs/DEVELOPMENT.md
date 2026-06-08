@@ -38,6 +38,17 @@ Run the full unit suite:
 python -m unittest discover -s tests -v
 ```
 
+Run the repository security policy:
+
+```bash
+python tools/repository_policy.py
+```
+
+Review an unfamiliar pull-request diff before checking out or executing its
+branch. Do not run contributed installers, binaries, or scripts outside an
+isolated environment. CI jobs use read-only repository permissions, and
+first-time contributor workflows require maintainer approval.
+
 Compile every runtime module:
 
 ```bash
