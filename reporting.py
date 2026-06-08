@@ -84,6 +84,43 @@ def _build_sarif_result(result: dict[str, Any]) -> dict[str, Any] | None:
     probability = float(result["probability"])
     fingerprint_source = f"{target_type}:{target}".encode("utf-8")
 
+    # 1. Base location setup
+    location_entry = {
+        "logicalLocations": [
+            {
+                "fullyQualifiedName": target,
+                "kind": target_type,
+            }
+        ]
+    }
+
+    # 2. Extract batch file source context if available
+    # Check if the result metadata includes a file source path (passed during batch scanning)
+    source_path = result.get("source_path") 
+    line_number = result.get("line_number")
+
+    if source_path and line_number:
+        try:
+            # Read the specific line from the source batch file
+            lines = Path(source_path).read_text(encoding="utf-8").splitlines()
+            if 0 < line_number <= len(lines):
+                source_line_text = lines[line_number - 1]
+                
+                # Add physicalLocation to point to the file and snippet line
+                location_entry["physicalLocation"] = {
+                    "artifactLocation": {
+                        "uri": Path(source_path).name
+                    },
+                    "region": {
+                        "startLine": line_number,
+                        "snippet": {
+                            "text": source_line_text
+                        }
+                    }
+                }
+        except Exception:
+            pass # Fallback gracefully if file can't be read
+
     return {
         "ruleId": rule["id"],
         "level": rule["defaultConfiguration"]["level"],
@@ -93,16 +130,7 @@ def _build_sarif_result(result: dict[str, Any]) -> dict[str, Any] | None:
                 f"with {probability:.1%} phishing risk."
             )
         },
-        "locations": [
-            {
-                "logicalLocations": [
-                    {
-                        "fullyQualifiedName": target,
-                        "kind": target_type,
-                    }
-                ]
-            }
-        ],
+        "locations": [location_entry],
         "partialFingerprints": {
             "phishguard/v1": hashlib.sha256(fingerprint_source).hexdigest()
         },
