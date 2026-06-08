@@ -8,8 +8,8 @@
 [![Contributions](https://img.shields.io/badge/Contributions-Welcome-2ea44f?style=flat-square)](CONTRIBUTING.md)
 
 An explainable phishing detection engine that analyzes URLs and emails in real
-time using feature engineering and calibrated probabilistic scoring. It works
-offline and requires no API key.
+time using feature engineering and heuristic risk scoring. It works offline
+and requires no API key.
 
 Created and maintained by
 [Omobolaji Adeyan](https://github.com/omobolajiadeyan), a cybersecurity
@@ -134,6 +134,7 @@ Contributions are welcome from security analysts, Python developers, students,
 researchers, and first-time open-source contributors.
 
 - Read [CONTRIBUTING.md](CONTRIBUTING.md) before starting.
+- Follow the reproducible [development workflow](docs/DEVELOPMENT.md).
 - Pick a scoped task from the
   [open issues](https://github.com/omobolajiadeyan/phishguard-ai/issues).
 - Use [Discussions](https://github.com/omobolajiadeyan/phishguard-ai/discussions)

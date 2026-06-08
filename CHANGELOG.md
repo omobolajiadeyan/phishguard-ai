@@ -11,6 +11,8 @@ All notable changes to PhishGuard AI are documented here.
 - CodeQL analysis using pinned GitHub Actions
 - Tag-gated release automation with checksums and signed build provenance
 - Detection-model documentation and evidence requirements for scoring changes
+- Reproducible contributor setup, verification, safe-data, and review guidance
+- Structured issue routing for design discussions and private security reports
 
 ### Changed
 
