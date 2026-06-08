@@ -81,6 +81,10 @@ phishguard email \
 # Batch scan a list of URLs
 phishguard batch data/urls.txt
 
+# Use ASCII-only output in legacy terminals or CI logs
+python phishguard.py url "https://google.com" --plain
+python phishguard.py batch data/urls.txt --no-unicode
+
 # Export results to JSON
 phishguard batch data/urls.txt --output results.json
 
