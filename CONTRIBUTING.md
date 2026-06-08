@@ -34,6 +34,12 @@ The complete local verification and pull-request workflow is documented in
 Do not include live credentials, private email, personal data, or active
 phishing payloads. Use reserved domains and clearly synthetic samples in tests.
 
+Do not include executables, compiled binaries, symbolic links, obfuscated
+payloads, download-and-execute scripts, or unexpected dependencies. Repository
+policy checks reject these automatically. A maintainer must inspect the diff
+before running code from an unfamiliar fork; passing CI is supporting evidence,
+not proof that a contribution is safe.
+
 ## Pull Requests
 
 1. Open or reference an issue describing the behavior.
@@ -42,8 +48,9 @@ phishing payloads. Use reserved domains and clearly synthetic samples in tests.
 3. Keep the change focused. Draft pull requests are welcome for early feedback.
 4. Add tests that fail before the change and pass afterward.
 5. Run `python -m unittest discover -s tests -v`.
-6. Explain any scoring or threshold change with before-and-after examples.
-7. Update user-facing documentation when commands, output, or features change.
+6. Run `python tools/repository_policy.py`.
+7. Explain any scoring or threshold change with before-and-after examples.
+8. Update user-facing documentation when commands, output, or features change.
 
 An issue normally has one active implementation. You can still contribute by
 reviewing an open pull request, reproducing the behavior, suggesting test
