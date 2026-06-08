@@ -32,6 +32,7 @@ class CliTests(unittest.TestCase):
     def test_batch_command_writes_sarif_findings(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             output_path = Path(temp_dir) / "results.sarif"
+
             result = subprocess.run(
                 [
                     sys.executable,
@@ -49,9 +50,12 @@ class CliTests(unittest.TestCase):
             )
 
             self.assertEqual(result.returncode, 0, result.stderr)
+
             payload = json.loads(output_path.read_text(encoding="utf-8"))
+
             self.assertEqual(payload["version"], "2.1.0")
             self.assertTrue(payload["runs"][0]["results"])
+
             self.assertTrue(
                 all(
                     finding["level"] in {"warning", "error"}
@@ -76,6 +80,53 @@ class CliTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 2)
         self.assertIn("--format sarif requires --output", result.stderr)
+
+    def test_url_command_plain_mode_uses_ascii_output(self):
+        result = subprocess.run(
+            [
+                sys.executable,
+                "phishguard.py",
+                "url",
+                "https://www.google.com",
+                "--plain",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+        self.assertIn("SAFE", result.stdout)
+
+        self.assertNotIn("█", result.stdout)
+        self.assertNotIn("░", result.stdout)
+        self.assertNotIn("─", result.stdout)
+
+    def test_email_command_plain_mode_uses_ascii_output(self):
+        result = subprocess.run(
+            [
+                sys.executable,
+                "phishguard.py",
+                "email",
+                "--subject",
+                "Hello",
+                "--body",
+                "Test email",
+                "--plain",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+        self.assertNotIn("█", result.stdout)
+        self.assertNotIn("░", result.stdout)
+        self.assertNotIn("─", result.stdout)
+
+        self.assertIn("Risk", result.stdout)
 
 
 if __name__ == "__main__":

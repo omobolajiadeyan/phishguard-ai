@@ -40,15 +40,28 @@ VERDICT_ICON = {
     "SUSPICIOUS": "SUSPICIOUS",
     "SAFE":       "SAFE",
 }
+PLAIN_MODE = False
 
 
 def probability_bar(prob: float) -> str:
     filled = round(prob * 20)
+
+    if PLAIN_MODE:
+        return "#" * filled + "-" * (20 - filled) + f"  {prob*100:.1f}%"
+
     color = RED if prob >= 0.75 else YELLOW if prob >= THRESHOLD else GREEN
     return color + "█" * filled + GRAY + "░" * (20 - filled) + RESET + f"  {prob*100:.1f}%"
 
-
 def print_banner():
+    if PLAIN_MODE:
+        print("""
+============================================================
+                       PHISHGUARD AI
+============================================================
+Explainable phishing detection
+""")
+        return
+
     print(f"""
 {CYAN}{BOLD}
   ██████╗ ██╗  ██╗██╗███████╗██╗  ██╗ ██████╗ ██╗   ██╗ █████╗ ██████╗ ██████╗      █████╗ ██╗
@@ -60,13 +73,13 @@ def print_banner():
 {RESET}{GRAY}  Explainable phishing detection | github.com/omobolajiadeyan{RESET}
 """)
 
-
 def analyze_url(url: str, verbose: bool = False) -> dict:
     prob, features = score_url(url)
     verdict = classify(prob)
     color = VERDICT_COLOR[verdict]
 
-    print(f"\n{'─'*60}")
+    separator = "-" * 60 if PLAIN_MODE else "─" * 60
+    print(f"\n{separator}")
     print(f"  URL     : {url}")
     print(f"  Verdict : {color}{BOLD}{verdict}{RESET}")
     print(f"  Risk    : {probability_bar(prob)}")
@@ -85,7 +98,8 @@ def analyze_email(subject: str, body: str, verbose: bool = False) -> dict:
     verdict = classify(prob)
     color = VERDICT_COLOR[verdict]
 
-    print(f"\n{'─'*60}")
+    separator = "-" * 60 if PLAIN_MODE else "─" * 60
+    print(f"\n{separator}")
     print(f"  Subject : {subject}")
     print(f"  Verdict : {color}{BOLD}{verdict}{RESET}")
     print(f"  Risk    : {probability_bar(prob)}")
@@ -121,12 +135,18 @@ def batch_scan_urls(filepath: str, verbose: bool = False) -> list:
 
 def add_output_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--output", "-o", help="Save results to a file")
+    
     parser.add_argument(
         "--format",
         choices=("json", "sarif"),
         default="json",
         help="Output format used with --output (default: json)",
     )
+    parser.add_argument(
+    "--plain",
+    action="store_true",
+    help="Use plain ASCII output",
+)
 
 
 def main():
@@ -164,6 +184,8 @@ Examples:
     add_output_arguments(batch_parser)
 
     args = parser.parse_args()
+    global PLAIN_MODE
+    PLAIN_MODE = args.plain
     if args.format == "sarif" and not args.output:
         parser.error("--format sarif requires --output")
 
