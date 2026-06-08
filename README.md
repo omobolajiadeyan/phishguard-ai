@@ -99,6 +99,20 @@ copy-ready workflow using GitHub's official SARIF upload action.
 See the [detection model documentation](docs/DETECTION_MODEL.md) for feature
 semantics, limitations, and the evidence required for scoring changes.
 
+## Reproducible Benchmark
+
+Run the public-safe URL regression fixture with:
+
+```bash
+python tools/evaluate_url_benchmark.py
+```
+
+The command reports ordered predictions, confusion-matrix counts, precision,
+recall, and false-positive rate. These are fixture metrics for detecting
+regressions, not population-level accuracy or calibration estimates. See the
+[benchmark documentation](docs/BENCHMARK.md) for the data scope and reporting
+rules.
+
 ## Example Output
 
 ```
