@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+import ast
 import re
 import subprocess
 import sys
-import tomllib
 from pathlib import Path
 
 
@@ -77,8 +77,12 @@ def check_files(entries: list[tuple[str, Path]]) -> list[str]:
 
 def check_dependencies() -> list[str]:
     errors = []
-    metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
-    dependencies = metadata.get("project", {}).get("dependencies", [])
+    metadata = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    project_section = metadata.split("[project]", 1)[1].split("\n[", 1)[0]
+    match = re.search(r"(?ms)^dependencies\s*=\s*(\[.*?\])", project_section)
+    dependencies = ast.literal_eval(match.group(1)) if match else None
+    if dependencies is None:
+        errors.append("pyproject.toml: project dependencies declaration is required")
     if dependencies:
         errors.append("pyproject.toml: runtime dependencies require maintainer review")
 
