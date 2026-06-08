@@ -13,6 +13,7 @@ All notable changes to PhishGuard AI are documented here.
 - Detection-model documentation and evidence requirements for scoring changes
 - Reproducible contributor setup, verification, safe-data, and review guidance
 - Structured issue routing for design discussions and private security reports
+- Branch protection and confidential GitHub vulnerability reporting
 
 ### Changed
 

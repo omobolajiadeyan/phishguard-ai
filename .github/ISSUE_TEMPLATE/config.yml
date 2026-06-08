@@ -4,5 +4,5 @@ contact_links:
     url: https://github.com/omobolajiadeyan/phishguard-ai/discussions
     about: Discuss an approach before opening an implementation issue.
   - name: Security vulnerability
-    url: https://github.com/omobolajiadeyan/phishguard-ai/security/policy
-    about: Follow the private reporting instructions for security-sensitive issues.
+    url: https://github.com/omobolajiadeyan/phishguard-ai/security/advisories/new
+    about: Report security-sensitive issues confidentially to the maintainers.
