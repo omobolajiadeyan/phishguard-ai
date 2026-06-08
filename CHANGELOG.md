@@ -2,6 +2,21 @@
 
 All notable changes to PhishGuard AI are documented here.
 
+## [Unreleased]
+
+### Added
+
+- Standards-based Python packaging with an installed `phishguard` command
+- Isolated distribution build, metadata, wheel-installation, and CLI checks
+- CodeQL analysis using pinned GitHub Actions
+- Detection-model documentation and evidence requirements for scoring changes
+
+### Changed
+
+- Clarified that current scores are explainable heuristics rather than
+  statistically calibrated probabilities
+- Expanded contributor coordination and evaluation benchmark requirements
+
 ## [0.3.0] - 2026-06-08
 
 ### Added

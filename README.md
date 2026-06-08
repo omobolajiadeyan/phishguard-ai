@@ -1,6 +1,7 @@
 # PhishGuard AI
 
 [![Tests](https://github.com/omobolajiadeyan/phishguard-ai/actions/workflows/tests.yml/badge.svg)](https://github.com/omobolajiadeyan/phishguard-ai/actions/workflows/tests.yml)
+[![CodeQL](https://github.com/omobolajiadeyan/phishguard-ai/actions/workflows/codeql.yml/badge.svg)](https://github.com/omobolajiadeyan/phishguard-ai/actions/workflows/codeql.yml)
 [![Release](https://img.shields.io/github/v/release/omobolajiadeyan/phishguard-ai?style=flat-square)](https://github.com/omobolajiadeyan/phishguard-ai/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 [![Maintainer](https://img.shields.io/badge/Maintainer-Omobolaji_Adeyan-0A66C2?style=flat-square)](https://github.com/omobolajiadeyan)
@@ -56,31 +57,35 @@ validated as a statistically trained model.
 git clone https://github.com/omobolajiadeyan/phishguard-ai.git
 cd phishguard-ai
 python --version  # Python 3.10+ required
+python -m pip install .
 python -m unittest discover -s tests -v
 ```
+
+Installation provides a `phishguard` command. Running the source file directly
+remains supported for development.
 
 ## Usage
 
 ```bash
 # Analyze a single URL
-python phishguard.py url "http://paypa1-secure-login.xyz/verify"
+phishguard url "http://paypa1-secure-login.xyz/verify"
 
 # Analyze with feature breakdown
-python phishguard.py url "https://google.com" --verbose
+phishguard url "https://google.com" --verbose
 
 # Analyze an email
-python phishguard.py email \
+phishguard email \
   --subject "URGENT: Your account has been suspended" \
   --body "Click here immediately to verify your account or it will be deleted."
 
 # Batch scan a list of URLs
-python phishguard.py batch data/urls.txt
+phishguard batch data/urls.txt
 
 # Export results to JSON
-python phishguard.py batch data/urls.txt --output results.json
+phishguard batch data/urls.txt --output results.json
 
 # Export actionable findings to SARIF 2.1.0
-python phishguard.py batch data/urls.txt \
+phishguard batch data/urls.txt \
   --format sarif \
   --output phishguard.sarif
 ```
