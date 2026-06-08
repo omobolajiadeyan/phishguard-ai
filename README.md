@@ -141,6 +141,8 @@ researchers, and first-time open-source contributors.
 - See [ROADMAP.md](ROADMAP.md) for current priorities.
 - Accepted contributors are credited in [AUTHORS.md](AUTHORS.md).
 - Releases and notable changes are recorded in [CHANGELOG.md](CHANGELOG.md).
+- Release artifacts follow the documented [release process](docs/RELEASING.md)
+  with checksums and signed build provenance.
 
 ## Project Leadership
 

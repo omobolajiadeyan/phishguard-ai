@@ -9,6 +9,7 @@ All notable changes to PhishGuard AI are documented here.
 - Standards-based Python packaging with an installed `phishguard` command
 - Isolated distribution build, metadata, wheel-installation, and CLI checks
 - CodeQL analysis using pinned GitHub Actions
+- Tag-gated release automation with checksums and signed build provenance
 - Detection-model documentation and evidence requirements for scoring changes
 
 ### Changed
