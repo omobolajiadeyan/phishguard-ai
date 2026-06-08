@@ -1,6 +1,10 @@
 # PhishGuard AI
 
-An AI-powered phishing detection engine that analyzes URLs and emails in real time using feature engineering and weighted probabilistic scoring — no internet connection or API key required.
+[![Tests](https://github.com/omobolajiadeyan/phishguard-ai/actions/workflows/tests.yml/badge.svg)](https://github.com/omobolajiadeyan/phishguard-ai/actions/workflows/tests.yml)
+
+An explainable phishing detection engine that analyzes URLs and emails in real
+time using feature engineering and calibrated probabilistic scoring. It works
+offline and requires no API key.
 
 Built because most phishing detection tools are either black-box cloud services or require expensive ML training pipelines. PhishGuard runs entirely offline and explains exactly *why* it flagged something.
 
@@ -103,5 +107,5 @@ phishguard-ai/
 
 ## Author
 
-**Omobolaji Adeyan** — Cybersecurity Portfolio Project  
-[GitHub](https://github.com/oadeyan)
+**Omobolaji Adeyan** - Cybersecurity Engineer
+[GitHub](https://github.com/omobolajiadeyan)

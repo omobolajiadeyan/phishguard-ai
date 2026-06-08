@@ -38,6 +38,8 @@ EMAIL_WEIGHTS = {
 }
 
 THRESHOLD = 0.55  # score above this = classified as phishing
+URL_BIAS = -1.30
+EMAIL_BIAS = -0.30
 
 
 def score_url(url: str) -> tuple[float, dict]:
@@ -46,7 +48,11 @@ def score_url(url: str) -> tuple[float, dict]:
     Returns (probability 0.0-1.0, feature breakdown).
     """
     features = extract_url_features(url)
-    raw_score = sum(features[f] * URL_WEIGHTS[f] for f in URL_WEIGHTS if f in features)
+    raw_score = URL_BIAS + sum(
+        features[f] * URL_WEIGHTS[f]
+        for f in URL_WEIGHTS
+        if f in features
+    )
 
     # Sigmoid normalisation to keep output between 0 and 1
     import math
@@ -60,7 +66,11 @@ def score_email(subject: str, body: str) -> tuple[float, dict]:
     Returns (probability 0.0-1.0, feature breakdown).
     """
     features = extract_email_features(subject, body)
-    raw_score = sum(features[f] * EMAIL_WEIGHTS[f] for f in EMAIL_WEIGHTS if f in features)
+    raw_score = EMAIL_BIAS + sum(
+        features[f] * EMAIL_WEIGHTS[f]
+        for f in EMAIL_WEIGHTS
+        if f in features
+    )
 
     import math
     probability = 1 / (1 + math.exp(-raw_score * 2.5))

@@ -10,6 +10,17 @@ import json
 import sys
 from model import score_url, score_email, classify, THRESHOLD
 
+
+def configure_output() -> None:
+    """Keep decorative output from crashing on limited console encodings."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(errors="replace")
+
+
+configure_output()
+
 RED    = "\033[91m"
 YELLOW = "\033[93m"
 GREEN  = "\033[92m"
@@ -46,7 +57,7 @@ def print_banner():
   ██╔═══╝ ██╔══██║██║╚════██║██╔══██║██║   ██║██║   ██║██╔══██║██╔══██╗██║  ██║    ██╔══██║██║
   ██║     ██║  ██║██║███████║██║  ██║╚██████╔╝╚██████╔╝██║  ██║██║  ██║██████╔╝    ██║  ██║██║
   ╚═╝     ╚═╝  ╚═╝╚═╝╚══════╝╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝     ╚═╝  ╚═╝╚═╝
-{RESET}{GRAY}  AI-powered phishing detection | github.com/oadeyan{RESET}
+{RESET}{GRAY}  Explainable phishing detection | github.com/omobolajiadeyan{RESET}
 """)
 
 

@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
 results.json
+smoke-results.json
 *.log
 .DS_Store
 .env
