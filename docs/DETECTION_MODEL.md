@@ -56,5 +56,6 @@ cannot distinguish an improvement from overfitting.
 - The current regression set is small and is not a population-level accuracy
   benchmark.
 
-Issue #3 tracks the labeled benchmark needed to report confusion-matrix
-metrics and support stronger calibration claims.
+Issue #3 tracks a labeled evaluation benchmark for reproducible regression
+metrics. Population-level accuracy or calibration claims require a larger,
+representative dataset with documented provenance.
