@@ -2,14 +2,14 @@
 Lightweight phishing classifier using a hand-tuned decision tree.
 No external ML libraries needed — pure Python implementation.
 
-Design: each feature is weighted by its predictive power based on
-research from PhishTank and APWG eCrime datasets.
+Design: each feature has a reviewable, hand-tuned heuristic weight. The
+weights are not the output of a trained statistical model.
 """
 
 from features import extract_url_features, extract_email_features
 
 
-# Feature weights derived from analysis of phishing datasets.
+# Explainable heuristic weights for common phishing indicators.
 # Positive weight = increases phishing probability.
 URL_WEIGHTS = {
     "url_length":         0.015,   # longer URLs are more suspicious

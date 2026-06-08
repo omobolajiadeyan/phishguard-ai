@@ -1,10 +1,15 @@
 ## Summary
 
 - 
+- Related issue:
+- [ ] A maintainer confirmed the implementation approach on the issue.
 
 ## Verification
 
 - [ ] `python -m unittest discover -s tests -v`
+- [ ] `python -m py_compile features.py model.py phishguard.py reporting.py`
+- [ ] I tested the relevant CLI or library behavior directly.
+- [ ] I updated documentation for user-facing behavior changes.
 - [ ] Detection changes include legitimate and malicious regression samples.
 - [ ] No credentials, personal data, or active malicious payloads are included.
 
