@@ -1,3 +1,5 @@
+from contextlib import redirect_stdout
+from io import StringIO
 import json
 import os
 import subprocess
@@ -5,6 +7,8 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+
+import phishguard
 
 
 class CliTests(unittest.TestCase):
@@ -122,6 +126,22 @@ class CliTests(unittest.TestCase):
             self.assertEqual(payload["verdict"], "SAFE")
             self.assertIsInstance(payload["probability"], float)
             self.assertIsInstance(payload["features"], dict)
+
+    def test_plain_mode_does_not_persist_between_in_process_calls(self):
+        plain_output = StringIO()
+        with redirect_stdout(plain_output):
+            phishguard.analyze_url("https://www.google.com", plain=True)
+
+        decorated_output = StringIO()
+        with redirect_stdout(decorated_output):
+            phishguard.analyze_url("https://www.google.com")
+
+        plain_text = plain_output.getvalue()
+        decorated_text = decorated_output.getvalue()
+
+        self.assert_plain_output(plain_text)
+        self.assertIn("\033[", decorated_text)
+        self.assertIn(phishguard.separator(), decorated_text)
 
     def test_batch_command_writes_sarif_findings(self):
         with tempfile.TemporaryDirectory() as temp_dir:
