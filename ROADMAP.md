@@ -10,7 +10,7 @@ tracked in GitHub issues so contributors can discuss and claim scoped tasks.
 | --- | --- | --- |
 | Integration | [Batch source locations in SARIF](https://github.com/omobolajiadeyan/phishguard-ai/issues/5) | In progress in PR #6 |
 | API | [Stable public Python API guide](https://github.com/omobolajiadeyan/phishguard-ai/issues/16) | Help wanted |
-| Email detection | [SPF, DKIM, and DMARC signals](https://github.com/omobolajiadeyan/phishguard-ai/issues/17) | Design discussion |
+| Email detection | [SPF, DKIM, and DMARC signals](https://github.com/omobolajiadeyan/phishguard-ai/issues/17) | In progress |
 | Evaluation | [Public-data benchmark provenance](https://github.com/omobolajiadeyan/phishguard-ai/issues/18) | Research help wanted |
 
 ## Recently Shipped

@@ -71,6 +71,30 @@ class EmailScoringTests(unittest.TestCase):
 
         self.assertEqual(classify(probability), "PHISHING")
 
+    def test_forwarded_legitimate_email_stays_safe_with_spf_failure(self):
+        probability, features = score_email(
+            "Project update",
+            "Here is the project update from yesterday's working session.",
+            "forwarder.example; spf=fail; dkim=pass; dmarc=pass",
+        )
+
+        self.assertEqual(classify(probability), "SAFE")
+        self.assertEqual(features["spf_result"], "fail")
+
+    def test_combined_authentication_failures_raise_phishing_score(self):
+        subject = "Security alert"
+        body = "Click here to verify your account."
+        baseline, _ = score_email(subject, body)
+        authenticated, features = score_email(
+            subject,
+            body,
+            "mx.example; spf=fail; dkim=fail; dmarc=fail",
+        )
+
+        self.assertGreater(authenticated, baseline)
+        self.assertEqual(classify(authenticated), "PHISHING")
+        self.assertEqual(features["dmarc_result"], "fail")
+
 
 if __name__ == "__main__":
     unittest.main()

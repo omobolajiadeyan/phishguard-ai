@@ -4,6 +4,11 @@ All notable changes to PhishGuard AI are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- Optional SPF, DKIM, and DMARC `Authentication-Results` parsing with
+  conservative, explainable email risk signals.
+
 ### Changed
 
 - Started the `0.5.0` development cycle and added direct release-wheel installation guidance.
