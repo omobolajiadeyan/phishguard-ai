@@ -6,6 +6,7 @@ All notable changes to PhishGuard AI are documented here.
 
 ### Added
 
+- Conservative punycode and Unicode hostname indicators for URL analysis
 - Public-safe URL regression fixture and deterministic benchmark metrics
 - Standards-based Python packaging with an installed `phishguard` command
 - Isolated distribution build, metadata, wheel-installation, and CLI checks

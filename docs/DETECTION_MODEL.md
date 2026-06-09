@@ -23,6 +23,12 @@ as the measured probability that a target is malicious.
 - Phishing-related words
 - Digit and special-character density
 - Hostname entropy
+- Punycode labels and Unicode hostname presence
+
+IDN indicators are contextual signals with deliberately modest weights.
+Internationalized domains are legitimate and are not classified as phishing
+from either indicator alone. Confusable-character and brand-impersonation
+matching are not currently implemented.
 
 ## Current Email Indicators
 
@@ -52,7 +58,7 @@ cannot distinguish an improvement from overfitting.
 - The model does not fetch pages, follow redirects, or inspect certificates.
 - It does not query DNS, domain age, blocklists, or threat intelligence.
 - It does not validate SPF, DKIM, or DMARC.
-- Unicode confusables and IDN/punycode signals are not yet implemented.
+- Unicode confusable-character and brand-impersonation matching are not implemented.
 - The current regression set is small and is not a population-level accuracy
   benchmark.
 
