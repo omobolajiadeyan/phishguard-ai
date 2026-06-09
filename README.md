@@ -54,6 +54,21 @@ validated as a statistically trained model.
 
 ## Installation
 
+Install the verified `v0.4.0` wheel directly from GitHub Releases:
+
+```bash
+python -m pip install \
+  https://github.com/omobolajiadeyan/phishguard-ai/releases/download/v0.4.0/phishguard_ai-0.4.0-py3-none-any.whl
+phishguard --help
+```
+
+The release also includes a source archive, `SHA256SUMS`, and signed build
+provenance. See the
+[v0.4.0 release](https://github.com/omobolajiadeyan/phishguard-ai/releases/tag/v0.4.0)
+for downloads and verification details.
+
+For development, install from a clone:
+
 ```bash
 git clone https://github.com/omobolajiadeyan/phishguard-ai.git
 cd phishguard-ai

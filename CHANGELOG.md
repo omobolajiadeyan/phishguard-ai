@@ -4,6 +4,11 @@ All notable changes to PhishGuard AI are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- Started the `0.5.0` development cycle and added direct release-wheel installation guidance.
+- Refreshed the roadmap with scoped Python API, email-authentication, and benchmark tasks.
+
 ## [0.4.0] - 2026-06-09
 
 ### Added
