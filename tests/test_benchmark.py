@@ -28,9 +28,9 @@ class BenchmarkFixtureTests(unittest.TestCase):
     def test_checked_in_fixture_loads_in_order(self):
         samples = load_samples("data/benchmark_urls.jsonl")
 
-        self.assertEqual(len(samples), 12)
+        self.assertEqual(len(samples), 14)
         self.assertEqual(samples[0].id, "legitimate-001")
-        self.assertEqual(samples[-1].id, "phishing-006")
+        self.assertEqual(samples[-1].id, "phishing-007")
 
     def test_unknown_label_is_rejected(self):
         with tempfile.TemporaryDirectory() as temp_dir:

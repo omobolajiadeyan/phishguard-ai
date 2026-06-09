@@ -32,6 +32,7 @@ validated as a statistically trained model.
 - Suspicious TLDs (`.xyz`, `.tk`, `.ml`, `.ga`, `.click`)
 - Phishing keyword density (`verify`, `suspended`, `account`, `secure`, etc.)
 - Subdomain depth, path depth, digit ratio, special character density
+- Punycode and Unicode hostname indicators, weighted conservatively as context
 
 **Email features analyzed:**
 - Urgency language (`action required`, `account suspended`, `verify now`)

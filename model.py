@@ -24,6 +24,8 @@ URL_WEIGHTS = {
     "domain_length":     -0.01,    # short domains slightly safer
     "url_entropy":        0.12,    # high entropy = randomly generated domain
     "has_port":           0.40,    # non-standard port = suspicious
+    "has_punycode":       0.10,    # contextual IDNA signal, not malicious alone
+    "has_unicode_hostname": 0.08,  # legitimate IDNs exist; keep weight modest
 }
 
 EMAIL_WEIGHTS = {

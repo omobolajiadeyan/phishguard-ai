@@ -29,6 +29,30 @@ class UrlScoringTests(unittest.TestCase):
                 probability, _ = score_url(url)
                 self.assertEqual(classify(probability), "PHISHING")
 
+    def test_legitimate_idn_signals_are_safe(self):
+        urls = (
+            "https://xn--bcher-kva.example/catalog",
+            "https://b\u00fccher.example/catalog",
+        )
+
+        for url in urls:
+            with self.subTest(url=url):
+                probability, features = score_url(url)
+                self.assertEqual(classify(probability), "SAFE")
+                self.assertEqual(
+                    features["has_punycode"] + features["has_unicode_hostname"],
+                    1,
+                )
+
+    def test_punycode_combines_with_credential_lure_signals(self):
+        probability, features = score_url(
+            "https://xn--pple-43d.example/login/verify"
+        )
+
+        self.assertEqual(classify(probability), "SUSPICIOUS")
+        self.assertEqual(features["has_punycode"], 1)
+        self.assertEqual(features["phishing_keywords"], 2)
+
 
 class EmailScoringTests(unittest.TestCase):
     def test_normal_email_is_safe(self):
