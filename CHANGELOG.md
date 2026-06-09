@@ -4,6 +4,8 @@ All notable changes to PhishGuard AI are documented here.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-09
+
 ### Added
 
 - Conservative punycode and Unicode hostname indicators for URL analysis
