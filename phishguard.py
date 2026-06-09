@@ -98,8 +98,14 @@ def analyze_url(url: str, verbose: bool = False, plain: bool = False) -> dict:
     return {"url": url, "verdict": verdict, "probability": prob, "features": features}
 
 
-def analyze_email(subject: str, body: str, verbose: bool = False, plain: bool = False) -> dict:
-    prob, features = score_email(subject, body)
+def analyze_email(
+    subject: str,
+    body: str,
+    verbose: bool = False,
+    plain: bool = False,
+    authentication_results: str | None = None,
+) -> dict:
+    prob, features = score_email(subject, body, authentication_results)
     verdict = classify(prob)
 
     print(f"\n{separator(plain=plain)}")
@@ -177,6 +183,10 @@ Examples:
     email_parser = subparsers.add_parser("email", help="Analyze an email")
     email_parser.add_argument("--subject", required=True, help="Email subject line")
     email_parser.add_argument("--body", required=True, help="Email body text")
+    email_parser.add_argument(
+        "--authentication-results",
+        help="Trusted receiver's raw Authentication-Results header value",
+    )
     email_parser.add_argument("--verbose", "-v", action="store_true")
     add_output_arguments(email_parser)
 
@@ -200,7 +210,13 @@ Examples:
             print(style(f"\nResult saved to {args.output}", GREEN, plain=args.plain))
 
     elif args.command == "email":
-        result = analyze_email(args.subject, args.body, verbose=args.verbose, plain=args.plain)
+        result = analyze_email(
+            args.subject,
+            args.body,
+            authentication_results=args.authentication_results,
+            verbose=args.verbose,
+            plain=args.plain,
+        )
         if args.output:
             write_report(result, args.output, args.format)
             print(style(f"\nResult saved to {args.output}", GREEN, plain=args.plain))

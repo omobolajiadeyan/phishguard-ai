@@ -81,6 +81,30 @@ class CliTests(unittest.TestCase):
         self.assert_plain_output(result.stdout)
         self.assertIn("Subject : Meeting reminder", result.stdout)
 
+    def test_email_command_accepts_authentication_results(self):
+        result = subprocess.run(
+            [
+                sys.executable,
+                "phishguard.py",
+                "email",
+                "--subject",
+                "Security alert",
+                "--body",
+                "Click here to verify your account.",
+                "--authentication-results",
+                "mx.example; spf=fail; dkim=fail; dmarc=fail",
+                "--verbose",
+                "--plain",
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("dmarc_result              : fail", result.stdout)
+
     def test_no_unicode_batch_command_uses_ascii_output(self):
         result = subprocess.run(
             [

@@ -40,6 +40,7 @@ validated as a statistically trained model.
 - ALL CAPS word usage
 - Attachment mentions
 - Exclamation mark frequency
+- Optional SPF, DKIM, and DMARC results from a trusted receiver
 
 ## Features
 
@@ -92,7 +93,8 @@ phishguard url "https://google.com" --verbose
 # Analyze an email
 phishguard email \
   --subject "URGENT: Your account has been suspended" \
-  --body "Click here immediately to verify your account or it will be deleted."
+  --body "Click here immediately to verify your account or it will be deleted." \
+  --authentication-results "mx.example; spf=fail; dkim=fail; dmarc=fail"
 
 # Batch scan a list of URLs
 phishguard batch data/urls.txt
@@ -154,6 +156,7 @@ rules.
 ```
 phishguard-ai/
 ├── phishguard.py    # CLI entrypoint — commands: url, email, batch
+├── email_auth.py    # SPF, DKIM, and DMARC result parsing
 ├── features.py      # Feature extraction (URL + email)
 ├── model.py         # Weighted scoring model + sigmoid normalisation
 ├── reporting.py     # Native JSON and SARIF 2.1.0 serialization
