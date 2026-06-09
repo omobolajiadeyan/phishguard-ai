@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">PhishGuard AI terminal demonstration</title>
+  <desc id="desc">A safe reserved-domain URL scores 34.7 percent while a synthetic documentation-range credential lure scores 98.8 percent and is classified as phishing.</desc>
+  <rect width="1200" height="720" rx="24" fill="#0d1117"/>
+  <rect x="24" y="24" width="1152" height="672" rx="16" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+  <circle cx="58" cy="58" r="8" fill="#ff7b72"/>
+  <circle cx="84" cy="58" r="8" fill="#d29922"/>
+  <circle cx="110" cy="58" r="8" fill="#3fb950"/>
+  <text x="600" y="65" fill="#8b949e" font-family="Consolas, monospace" font-size="18" text-anchor="middle">PhishGuard AI - offline explainable detection</text>
+
+  <g font-family="Consolas, monospace" font-size="20">
+    <text x="58" y="112" fill="#58a6ff">$ phishguard url "https://www.example.com/account" --plain</text>
+    <text x="58" y="154" fill="#f0f6fc">URL     : https://www.example.com/account</text>
+    <text x="58" y="190" fill="#3fb950">Verdict : SAFE</text>
+    <text x="58" y="226" fill="#f0f6fc">Risk    : #######-------------  34.7%</text>
+
+    <line x1="58" y1="266" x2="1142" y2="266" stroke="#30363d" stroke-width="2"/>
+
+    <text x="58" y="312" fill="#58a6ff">$ phishguard url "http://192.0.2.10/secure-login/verify" --verbose --plain</text>
+    <text x="58" y="354" fill="#f0f6fc">URL     : http://192.0.2.10/secure-login/verify</text>
+    <text x="58" y="390" fill="#ff7b72">Verdict : PHISHING</text>
+    <text x="58" y="426" fill="#f0f6fc">Risk    : ####################  98.8%</text>
+
+    <text x="58" y="476" fill="#d2a8ff">Triggered evidence</text>
+    <text x="84" y="514" fill="#c9d1d9">has_ip_address       : 1</text>
+    <text x="460" y="514" fill="#c9d1d9">phishing_keywords : 3</text>
+    <text x="84" y="550" fill="#c9d1d9">has_https            : 0</text>
+    <text x="460" y="550" fill="#c9d1d9">path_depth         : 2</text>
+    <text x="84" y="586" fill="#c9d1d9">digit_ratio          : 0.1892</text>
+    <text x="460" y="586" fill="#c9d1d9">url_entropy        : 2.2464</text>
+
+    <rect x="58" y="624" width="1084" height="44" rx="8" fill="#0d1117" stroke="#238636"/>
+    <text x="600" y="653" fill="#7ee787" text-anchor="middle">Synthetic inputs only | Runs offline | No API key required</text>
+  </g>
+</svg>
