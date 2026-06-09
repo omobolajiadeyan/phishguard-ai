@@ -2,6 +2,26 @@
 
 All notable changes to PhishGuard AI are documented here.
 
+## [Unreleased]
+
+### Added
+
+- Public-safe URL regression fixture and deterministic benchmark metrics
+- Standards-based Python packaging with an installed `phishguard` command
+- Isolated distribution build, metadata, wheel-installation, and CLI checks
+- CodeQL analysis using pinned GitHub Actions
+- Tag-gated release automation with checksums and signed build provenance
+- Detection-model documentation and evidence requirements for scoring changes
+- Reproducible contributor setup, verification, safe-data, and review guidance
+- Structured issue routing for design discussions and private security reports
+- Branch protection and confidential GitHub vulnerability reporting
+
+### Changed
+
+- Clarified that current scores are explainable heuristics rather than
+  statistically calibrated probabilities
+- Expanded contributor coordination and evaluation benchmark requirements
+
 ## [0.3.0] - 2026-06-08
 
 ### Added

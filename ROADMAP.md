@@ -8,15 +8,17 @@ tracked in GitHub issues so contributors can discuss and claim scoped tasks.
 
 | Priority | Work | Status |
 | --- | --- | --- |
-| Portability | [Plain ASCII output mode](https://github.com/omobolajiadeyan/phishguard-ai/issues/1) | Good first issue |
+| Portability | [Plain ASCII output mode](https://github.com/omobolajiadeyan/phishguard-ai/issues/1) | In progress in PR #7 |
+| Integration | [Batch source locations in SARIF](https://github.com/omobolajiadeyan/phishguard-ai/issues/5) | In progress in PR #6 |
 | Detection | [IDN and punycode signals](https://github.com/omobolajiadeyan/phishguard-ai/issues/2) | Help wanted |
-| Quality | [Labeled calibration benchmark](https://github.com/omobolajiadeyan/phishguard-ai/issues/3) | Help wanted |
+| Quality | [Labeled evaluation benchmark](https://github.com/omobolajiadeyan/phishguard-ai/issues/3) | Initial fixture implemented |
 
 ## Recently Shipped
 
 - SARIF 2.1.0 output for GitHub Code Scanning and CI security pipelines
 - Calibrated scoring with regression coverage for common legitimate URLs
 - Windows-safe output handling and Python 3.10-3.13 continuous integration
+- Public-safe URL regression fixture with reproducible confusion-matrix metrics
 
 ## Next
 
