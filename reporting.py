@@ -96,30 +96,19 @@ def _build_sarif_result(result: dict[str, Any]) -> dict[str, Any] | None:
 
     # 2. Extract batch file source context if available
     # Check if the result metadata includes a file source path (passed during batch scanning)
-    source_path = result.get("source_path") 
+    # 2. Attach physical location from stored metadata (set by batch_scan_urls)
+    source_path = result.get("source_path")
     line_number = result.get("line_number")
 
     if source_path and line_number:
-        try:
-            # Read the specific line from the source batch file
-            lines = Path(source_path).read_text(encoding="utf-8").splitlines()
-            if 0 < line_number <= len(lines):
-                source_line_text = lines[line_number - 1]
-                
-                # Add physicalLocation to point to the file and snippet line
-                location_entry["physicalLocation"] = {
-                    "artifactLocation": {
-                        "uri": Path(source_path).name
-                    },
-                    "region": {
-                        "startLine": line_number,
-                        "snippet": {
-                            "text": source_line_text
-                        }
-                    }
-                }
-        except Exception:
-            pass # Fallback gracefully if file can't be read
+        location_entry["physicalLocation"] = {
+            "artifactLocation": {
+                "uri": Path(source_path).name
+            },
+            "region": {
+                "startLine": line_number
+            }
+        }
 
     return {
         "ruleId": rule["id"],
