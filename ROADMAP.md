@@ -21,7 +21,11 @@ tracked in GitHub issues so contributors can discuss and claim scoped tasks.
 - Conservative IDN and punycode indicators with false-positive regressions
 - Plain ASCII output mode contributed by BeauDevCode
 - Versioned wheel and source releases with checksums and build provenance
-- Conservative SPF, DKIM, and DMARC `Authentication-Results` signals
+
+## Ready for Next Release
+
+- Conservative SPF, DKIM, and DMARC `Authentication-Results` signals,
+  merged to `main` but not included in the v0.4.0 package
 
 ## Next
 
