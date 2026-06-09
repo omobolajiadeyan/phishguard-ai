@@ -6,6 +6,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 [![Maintainer](https://img.shields.io/badge/Maintainer-Omobolaji_Adeyan-0A66C2?style=flat-square)](https://github.com/omobolajiadeyan)
 [![Contributions](https://img.shields.io/badge/Contributions-Welcome-2ea44f?style=flat-square)](CONTRIBUTING.md)
+[![GitHub forks](https://img.shields.io/github/forks/omobolajiadeyan/phishguard-ai?style=flat-square)](https://github.com/omobolajiadeyan/phishguard-ai/forks)
+[![Release downloads](https://img.shields.io/github/downloads/omobolajiadeyan/phishguard-ai/total?style=flat-square)](https://github.com/omobolajiadeyan/phishguard-ai/releases)
 
 An explainable phishing detection engine that analyzes URLs and emails in real
 time using feature engineering and heuristic risk scoring. It works offline
@@ -58,6 +60,13 @@ validated as a statistically trained model.
 The [one-minute demo](docs/QUICK_DEMO.md) compares legitimate and suspicious
 inputs, displays the explainable feature breakdown, and exports a finding
 without using live phishing infrastructure.
+
+![PhishGuard safe-input and phishing-input terminal comparison](docs/assets/phishguard-demo.svg)
+
+See [Project Evidence](docs/PROJECT_EVIDENCE.md) for dated benchmark results,
+release and contribution evidence, a reproducible demonstration, and explicit
+limits on what the current metrics establish.
+[Watch the 18-second safe demo video](https://github.com/omobolajiadeyan/phishguard-ai/releases/download/v0.4.0/phishguard-demo.mp4).
 
 ## Installation
 
