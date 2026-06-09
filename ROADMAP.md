@@ -10,7 +10,6 @@ tracked in GitHub issues so contributors can discuss and claim scoped tasks.
 | --- | --- | --- |
 | Integration | [Batch source locations in SARIF](https://github.com/omobolajiadeyan/phishguard-ai/issues/5) | In progress in PR #6 |
 | API | [Stable public Python API guide](https://github.com/omobolajiadeyan/phishguard-ai/issues/16) | Help wanted |
-| Email detection | [SPF, DKIM, and DMARC signals](https://github.com/omobolajiadeyan/phishguard-ai/issues/17) | In progress |
 | Evaluation | [Public-data benchmark provenance](https://github.com/omobolajiadeyan/phishguard-ai/issues/18) | Research help wanted |
 
 ## Recently Shipped
@@ -22,6 +21,7 @@ tracked in GitHub issues so contributors can discuss and claim scoped tasks.
 - Conservative IDN and punycode indicators with false-positive regressions
 - Plain ASCII output mode contributed by BeauDevCode
 - Versioned wheel and source releases with checksums and build provenance
+- Conservative SPF, DKIM, and DMARC `Authentication-Results` signals
 
 ## Next
 

@@ -8,6 +8,8 @@ All notable changes to PhishGuard AI are documented here.
 
 - Optional SPF, DKIM, and DMARC `Authentication-Results` parsing with
   conservative, explainable email risk signals.
+- A one-minute demo, first-contribution guide, support policy, and structured
+  documentation issue template.
 
 ### Changed
 

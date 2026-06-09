@@ -7,7 +7,7 @@
 ## Verification
 
 - [ ] `python -m unittest discover -s tests -v`
-- [ ] `python -m py_compile features.py model.py phishguard.py reporting.py`
+- [ ] `python -m py_compile email_auth.py features.py model.py phishguard.py reporting.py`
 - [ ] `python tools/repository_policy.py`
 - [ ] I tested the relevant CLI or library behavior directly.
 - [ ] I updated documentation for user-facing behavior changes.
