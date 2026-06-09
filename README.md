@@ -53,6 +53,12 @@ validated as a statistically trained model.
 - Zero dependencies — pure Python standard library
 - Offline — no data sent anywhere
 
+## Try It in One Minute
+
+The [one-minute demo](docs/QUICK_DEMO.md) compares legitimate and suspicious
+inputs, displays the explainable feature breakdown, and exports a finding
+without using live phishing infrastructure.
+
 ## Installation
 
 Install the verified `v0.4.0` wheel directly from GitHub Releases:
@@ -171,11 +177,14 @@ Contributions are welcome from security analysts, Python developers, students,
 researchers, and first-time open-source contributors.
 
 - Read [CONTRIBUTING.md](CONTRIBUTING.md) before starting.
+- Follow the short [first-contribution guide](docs/FIRST_CONTRIBUTION.md).
 - Follow the reproducible [development workflow](docs/DEVELOPMENT.md).
 - Pick a scoped task from the
-  [open issues](https://github.com/omobolajiadeyan/phishguard-ai/issues).
+  [`good first issue` list](https://github.com/omobolajiadeyan/phishguard-ai/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22).
 - Use [Discussions](https://github.com/omobolajiadeyan/phishguard-ai/discussions)
   for design questions and detection ideas.
+- See [SUPPORT.md](SUPPORT.md) for the right place to ask questions, report
+  bugs, or disclose vulnerabilities.
 - See [ROADMAP.md](ROADMAP.md) for current priorities.
 - Accepted contributors are credited in [AUTHORS.md](AUTHORS.md).
 - Releases and notable changes are recorded in [CHANGELOG.md](CHANGELOG.md).

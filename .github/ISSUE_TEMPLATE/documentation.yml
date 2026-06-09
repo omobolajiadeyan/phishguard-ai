@@ -1,0 +1,30 @@
+name: Documentation improvement
+description: Report unclear, missing, or incorrect project documentation
+title: "docs: "
+labels: ["documentation", "good first issue"]
+body:
+  - type: input
+    attributes:
+      label: Documentation location
+      description: Link to the file, heading, or command that needs improvement.
+      placeholder: README.md installation section
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Problem
+      description: Explain what is unclear, missing, or incorrect.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Proposed improvement
+      description: Suggest corrected wording, an example, or a verification step.
+    validations:
+      required: true
+  - type: checkboxes
+    attributes:
+      label: Verification
+      options:
+        - label: I checked the current default branch and searched existing issues.
+          required: true
