@@ -6,6 +6,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 [![Maintainer](https://img.shields.io/badge/Maintainer-Omobolaji_Adeyan-0A66C2?style=flat-square)](https://github.com/omobolajiadeyan)
 [![Contributions](https://img.shields.io/badge/Contributions-Welcome-2ea44f?style=flat-square)](CONTRIBUTING.md)
+[![GitHub forks](https://img.shields.io/github/forks/omobolajiadeyan/phishguard-ai?style=flat-square)](https://github.com/omobolajiadeyan/phishguard-ai/forks)
+[![Release downloads](https://img.shields.io/github/downloads/omobolajiadeyan/phishguard-ai/total?style=flat-square)](https://github.com/omobolajiadeyan/phishguard-ai/releases)
 
 An explainable phishing detection engine that analyzes URLs and emails in real
 time using feature engineering and heuristic risk scoring. It works offline
@@ -32,6 +34,7 @@ validated as a statistically trained model.
 - Suspicious TLDs (`.xyz`, `.tk`, `.ml`, `.ga`, `.click`)
 - Phishing keyword density (`verify`, `suspended`, `account`, `secure`, etc.)
 - Subdomain depth, path depth, digit ratio, special character density
+- Punycode and Unicode hostname indicators, weighted conservatively as context
 
 **Email features analyzed:**
 - Urgency language (`action required`, `account suspended`, `verify now`)
@@ -39,6 +42,7 @@ validated as a statistically trained model.
 - ALL CAPS word usage
 - Attachment mentions
 - Exclamation mark frequency
+- Optional SPF, DKIM, and DMARC results from a trusted receiver
 
 ## Features
 
@@ -51,7 +55,35 @@ validated as a statistically trained model.
 - Zero dependencies — pure Python standard library
 - Offline — no data sent anywhere
 
+## Try It in One Minute
+
+The [one-minute demo](docs/QUICK_DEMO.md) compares legitimate and suspicious
+inputs, displays the explainable feature breakdown, and exports a finding
+without using live phishing infrastructure.
+
+![PhishGuard safe-input and phishing-input terminal comparison](docs/assets/phishguard-demo.svg)
+
+See [Project Evidence](docs/PROJECT_EVIDENCE.md) for dated benchmark results,
+release and contribution evidence, a reproducible demonstration, and explicit
+limits on what the current metrics establish.
+[Watch the 18-second safe demo video](https://github.com/omobolajiadeyan/phishguard-ai/releases/download/v0.4.0/phishguard-demo.mp4).
+
 ## Installation
+
+Install the verified `v0.4.0` wheel directly from GitHub Releases:
+
+```bash
+python -m pip install \
+  https://github.com/omobolajiadeyan/phishguard-ai/releases/download/v0.4.0/phishguard_ai-0.4.0-py3-none-any.whl
+phishguard --help
+```
+
+The release also includes a source archive, `SHA256SUMS`, and signed build
+provenance. See the
+[v0.4.0 release](https://github.com/omobolajiadeyan/phishguard-ai/releases/tag/v0.4.0)
+for downloads and verification details.
+
+For development, install from a clone:
 
 ```bash
 git clone https://github.com/omobolajiadeyan/phishguard-ai.git
@@ -76,7 +108,8 @@ phishguard url "https://google.com" --verbose
 # Analyze an email
 phishguard email \
   --subject "URGENT: Your account has been suspended" \
-  --body "Click here immediately to verify your account or it will be deleted."
+  --body "Click here immediately to verify your account or it will be deleted." \
+  --authentication-results "mx.example; spf=fail; dkim=fail; dmarc=fail"
 
 # Batch scan a list of URLs
 phishguard batch data/urls.txt
@@ -138,6 +171,7 @@ rules.
 ```
 phishguard-ai/
 ├── phishguard.py    # CLI entrypoint — commands: url, email, batch
+├── email_auth.py    # SPF, DKIM, and DMARC result parsing
 ├── features.py      # Feature extraction (URL + email)
 ├── model.py         # Weighted scoring model + sigmoid normalisation
 ├── reporting.py     # Native JSON and SARIF 2.1.0 serialization
@@ -152,11 +186,14 @@ Contributions are welcome from security analysts, Python developers, students,
 researchers, and first-time open-source contributors.
 
 - Read [CONTRIBUTING.md](CONTRIBUTING.md) before starting.
+- Follow the short [first-contribution guide](docs/FIRST_CONTRIBUTION.md).
 - Follow the reproducible [development workflow](docs/DEVELOPMENT.md).
 - Pick a scoped task from the
-  [open issues](https://github.com/omobolajiadeyan/phishguard-ai/issues).
+  [`good first issue` list](https://github.com/omobolajiadeyan/phishguard-ai/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22).
 - Use [Discussions](https://github.com/omobolajiadeyan/phishguard-ai/discussions)
   for design questions and detection ideas.
+- See [SUPPORT.md](SUPPORT.md) for the right place to ask questions, report
+  bugs, or disclose vulnerabilities.
 - See [ROADMAP.md](ROADMAP.md) for current priorities.
 - Accepted contributors are credited in [AUTHORS.md](AUTHORS.md).
 - Releases and notable changes are recorded in [CHANGELOG.md](CHANGELOG.md).

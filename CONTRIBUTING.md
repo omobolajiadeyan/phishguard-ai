@@ -23,6 +23,11 @@ Python 3.10 or newer is supported.
 The complete local verification and pull-request workflow is documented in
 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
+First-time contributors can use the shorter
+[first-contribution guide](docs/FIRST_CONTRIBUTION.md) and choose an unclaimed
+issue labeled
+[`good first issue`](https://github.com/omobolajiadeyan/phishguard-ai/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22).
+
 ## Good Contributions
 
 - Add labeled legitimate and phishing samples with a source and rationale.
@@ -68,3 +73,7 @@ scope, and documentation. Passing CI is required but does not replace review.
 Accepted contributors are credited in [AUTHORS.md](AUTHORS.md) after their
 first merged contribution. Code, tests, documentation, issue triage, and
 technically grounded review are all meaningful contributions.
+
+Testing an open pull request is especially useful. Report the operating
+system, Python version, exact command, observed result, and whether the result
+matches the pull request description.

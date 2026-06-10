@@ -6,6 +6,21 @@ All notable changes to PhishGuard AI are documented here.
 
 ### Added
 
+- Optional SPF, DKIM, and DMARC `Authentication-Results` parsing with
+  conservative, explainable email risk signals.
+- A one-minute demo, first-contribution guide, support policy, and structured
+  documentation issue template.
+
+### Changed
+
+- Started the `0.5.0` development cycle and added direct release-wheel installation guidance.
+- Refreshed the roadmap with scoped Python API, email-authentication, and benchmark tasks.
+
+## [0.4.0] - 2026-06-09
+
+### Added
+
+- Conservative punycode and Unicode hostname indicators for URL analysis
 - Public-safe URL regression fixture and deterministic benchmark metrics
 - Standards-based Python packaging with an installed `phishguard` command
 - Isolated distribution build, metadata, wheel-installation, and CLI checks

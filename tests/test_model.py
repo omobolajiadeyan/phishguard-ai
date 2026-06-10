@@ -29,6 +29,30 @@ class UrlScoringTests(unittest.TestCase):
                 probability, _ = score_url(url)
                 self.assertEqual(classify(probability), "PHISHING")
 
+    def test_legitimate_idn_signals_are_safe(self):
+        urls = (
+            "https://xn--bcher-kva.example/catalog",
+            "https://b\u00fccher.example/catalog",
+        )
+
+        for url in urls:
+            with self.subTest(url=url):
+                probability, features = score_url(url)
+                self.assertEqual(classify(probability), "SAFE")
+                self.assertEqual(
+                    features["has_punycode"] + features["has_unicode_hostname"],
+                    1,
+                )
+
+    def test_punycode_combines_with_credential_lure_signals(self):
+        probability, features = score_url(
+            "https://xn--pple-43d.example/login/verify"
+        )
+
+        self.assertEqual(classify(probability), "SUSPICIOUS")
+        self.assertEqual(features["has_punycode"], 1)
+        self.assertEqual(features["phishing_keywords"], 2)
+
 
 class EmailScoringTests(unittest.TestCase):
     def test_normal_email_is_safe(self):
@@ -46,6 +70,30 @@ class EmailScoringTests(unittest.TestCase):
         )
 
         self.assertEqual(classify(probability), "PHISHING")
+
+    def test_forwarded_legitimate_email_stays_safe_with_spf_failure(self):
+        probability, features = score_email(
+            "Project update",
+            "Here is the project update from yesterday's working session.",
+            "forwarder.example; spf=fail; dkim=pass; dmarc=pass",
+        )
+
+        self.assertEqual(classify(probability), "SAFE")
+        self.assertEqual(features["spf_result"], "fail")
+
+    def test_combined_authentication_failures_raise_phishing_score(self):
+        subject = "Security alert"
+        body = "Click here to verify your account."
+        baseline, _ = score_email(subject, body)
+        authenticated, features = score_email(
+            subject,
+            body,
+            "mx.example; spf=fail; dkim=fail; dmarc=fail",
+        )
+
+        self.assertGreater(authenticated, baseline)
+        self.assertEqual(classify(authenticated), "PHISHING")
+        self.assertEqual(features["dmarc_result"], "fail")
 
 
 if __name__ == "__main__":

@@ -8,10 +8,9 @@ tracked in GitHub issues so contributors can discuss and claim scoped tasks.
 
 | Priority | Work | Status |
 | --- | --- | --- |
-| Portability | [Plain ASCII output mode](https://github.com/omobolajiadeyan/phishguard-ai/issues/1) | In progress in PR #7 |
 | Integration | [Batch source locations in SARIF](https://github.com/omobolajiadeyan/phishguard-ai/issues/5) | In progress in PR #6 |
-| Detection | [IDN and punycode signals](https://github.com/omobolajiadeyan/phishguard-ai/issues/2) | Help wanted |
-| Quality | [Labeled evaluation benchmark](https://github.com/omobolajiadeyan/phishguard-ai/issues/3) | Initial fixture implemented |
+| API | [Stable public Python API guide](https://github.com/omobolajiadeyan/phishguard-ai/issues/16) | Help wanted |
+| Evaluation | [Public-data benchmark provenance](https://github.com/omobolajiadeyan/phishguard-ai/issues/18) | Research help wanted |
 
 ## Recently Shipped
 
@@ -19,13 +18,19 @@ tracked in GitHub issues so contributors can discuss and claim scoped tasks.
 - Calibrated scoring with regression coverage for common legitimate URLs
 - Windows-safe output handling and Python 3.10-3.13 continuous integration
 - Public-safe URL regression fixture with reproducible confusion-matrix metrics
+- Conservative IDN and punycode indicators with false-positive regressions
+- Plain ASCII output mode contributed by BeauDevCode
+- Versioned wheel and source releases with checksums and build provenance
+
+## Ready for Next Release
+
+- Conservative SPF, DKIM, and DMARC `Authentication-Results` signals,
+  merged to `main` but not included in the v0.4.0 package
 
 ## Next
 
-- Email-header analysis for SPF, DKIM, and DMARC indicators
 - URL redirect-chain and hostname-normalization analysis
-- A documented Python API in addition to the command-line interface
-- Reproducible evaluation against public-safe labeled datasets
+- Expand installation and integration examples for SOC and CI workflows
 
 ## Later
 

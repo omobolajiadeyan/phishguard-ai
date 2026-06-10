@@ -120,6 +120,24 @@ def has_port(url: str) -> int:
         return 0
 
 
+def has_punycode(url: str) -> int:
+    """Return 1 when a hostname contains an IDNA punycode label."""
+    try:
+        hostname = urlparse(url).hostname or ""
+        return int(any(label.startswith("xn--") for label in hostname.split(".")))
+    except Exception:
+        return 0
+
+
+def has_unicode_hostname(url: str) -> int:
+    """Return 1 when a parsed hostname contains a non-ASCII code point."""
+    try:
+        hostname = urlparse(url).hostname or ""
+        return int(any(ord(character) > 127 for character in hostname))
+    except Exception:
+        return 0
+
+
 def extract_url_features(url: str) -> dict:
     """Extract all URL features and return as a named dict."""
     return {
@@ -135,6 +153,8 @@ def extract_url_features(url: str) -> dict:
         "domain_length":         domain_length(url),
         "url_entropy":           url_entropy(url),
         "has_port":              has_port(url),
+        "has_punycode":          has_punycode(url),
+        "has_unicode_hostname":  has_unicode_hostname(url),
     }
 
 

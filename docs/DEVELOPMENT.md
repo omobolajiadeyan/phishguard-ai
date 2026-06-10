@@ -52,7 +52,7 @@ first-time contributor workflows require maintainer approval.
 Compile every runtime module:
 
 ```bash
-python -m py_compile features.py model.py phishguard.py reporting.py
+python -m py_compile email_auth.py features.py model.py phishguard.py reporting.py
 ```
 
 When changing package metadata, installation, or release behavior, also run:
@@ -95,6 +95,7 @@ owns the implementation.
 ## Architecture Boundaries
 
 - `features.py` extracts named URL and email indicators.
+- `email_auth.py` parses supplied email-authentication results.
 - `model.py` applies reviewable heuristic weights and verdict thresholds.
 - `phishguard.py` owns CLI parsing, display, and batch orchestration.
 - `reporting.py` serializes native JSON and SARIF output.

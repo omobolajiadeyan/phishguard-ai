@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "phishguard-ai"
-version = "0.4.0.dev0"
+version = "0.5.0.dev0"
 description = "Explainable offline phishing detection for URLs and email"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -45,4 +45,4 @@ Changelog = "https://github.com/omobolajiadeyan/phishguard-ai/blob/main/CHANGELO
 phishguard = "phishguard:main"
 
 [tool.setuptools]
-py-modules = ["features", "model", "phishguard", "reporting"]
+py-modules = ["email_auth", "features", "model", "phishguard", "reporting"]

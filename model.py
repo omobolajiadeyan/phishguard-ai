@@ -7,6 +7,7 @@ weights are not the output of a trained statistical model.
 """
 
 from features import extract_url_features, extract_email_features
+from email_auth import extract_authentication_features
 
 
 # Explainable heuristic weights for common phishing indicators.
@@ -24,6 +25,8 @@ URL_WEIGHTS = {
     "domain_length":     -0.01,    # short domains slightly safer
     "url_entropy":        0.12,    # high entropy = randomly generated domain
     "has_port":           0.40,    # non-standard port = suspicious
+    "has_punycode":       0.10,    # contextual IDNA signal, not malicious alone
+    "has_unicode_hostname": 0.08,  # legitimate IDNs exist; keep weight modest
 }
 
 EMAIL_WEIGHTS = {
@@ -35,6 +38,9 @@ EMAIL_WEIGHTS = {
     "html_tag_count":         0.03,
     "has_attachment_mention": 0.30,
     "word_count":            -0.001,  # longer emails slightly less phishy
+    "spf_auth_risk":          0.08,
+    "dkim_auth_risk":         0.10,
+    "dmarc_auth_risk":        0.18,
 }
 
 THRESHOLD = 0.55  # score above this = classified as phishing
@@ -60,12 +66,17 @@ def score_url(url: str) -> tuple[float, dict]:
     return round(probability, 4), features
 
 
-def score_email(subject: str, body: str) -> tuple[float, dict]:
+def score_email(
+    subject: str,
+    body: str,
+    authentication_results: str | None = None,
+) -> tuple[float, dict]:
     """
     Score an email for phishing likelihood.
     Returns (probability 0.0-1.0, feature breakdown).
     """
     features = extract_email_features(subject, body)
+    features.update(extract_authentication_features(authentication_results))
     raw_score = EMAIL_BIAS + sum(
         features[f] * EMAIL_WEIGHTS[f]
         for f in EMAIL_WEIGHTS
