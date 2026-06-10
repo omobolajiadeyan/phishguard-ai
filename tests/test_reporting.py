@@ -139,19 +139,50 @@ class SarifReportingTests(unittest.TestCase):
     def test_batch_end_to_end_sarif(self):
         """End-to-end: batch_scan_urls wires source_path and line_number correctly."""
         content = (
-            "# this is a comment\n"           # line 1 - comment, skipped
-            "\n"                               # line 2 - blank, skipped
-            "https://www.google.com\n"         # line 3 - SAFE, omitted from SARIF
-            "http://paypa1-secure-login.xyz\n" # line 4 - PHISHING
+            "# this is a comment\n"
+            "\n"
+            "https://www.google.com\n"
+            "http://paypa1-secure-login.xyz\n"
         )
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".txt", delete=False, encoding="utf-8"
-        ) as f:
-            f.write(content)
-            tmp_path = f.name
 
+        # Create a temp directory and write fixture at a nested relative path
+        tmp_dir = tempfile.mkdtemp()
+        nested_dir = os.path.join(tmp_dir, "security")
+        os.makedirs(nested_dir)
+        fixture_path = os.path.join(nested_dir, "urls.txt")
+
+        with open(fixture_path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+        # Patch analyze_url to return fixed results — no live model
+        safe_result = {
+            "url": "https://www.google.com",
+            "verdict": "SAFE",
+            "probability": 0.1,
+            "features": {},
+        }
+        phishing_result = {
+            "url": "http://paypa1-secure-login.xyz",
+            "verdict": "PHISHING",
+            "probability": 0.99,
+            "features": {},
+        }
+
+        return_values = [safe_result, phishing_result]
+
+        import unittest.mock as mock
+        import phishguard
+
+        original_cwd = os.getcwd()
         try:
-            results = batch_scan_urls(tmp_path, verbose=False)
+            # Change to tmp_dir so the relative path "security/urls.txt" works
+            os.chdir(tmp_dir)
+
+            with mock.patch.object(
+                phishguard, "analyze_url", side_effect=return_values
+            ):
+                results = phishguard.batch_scan_urls("security/urls.txt", verbose=False)
+
             sarif = build_sarif(results)
             findings = sarif["runs"][0]["results"]
 
@@ -161,14 +192,16 @@ class SarifReportingTests(unittest.TestCase):
             finding = findings[0]
             physical = finding["locations"][0]["physicalLocation"]
 
-            # Must use forward slashes and keep full path
-            uri = physical["artifactLocation"]["uri"]
-            self.assertIn("/", uri.replace("\\", "/"))
+            # Must preserve the relative path exactly
+            self.assertEqual(physical["artifactLocation"]["uri"], "security/urls.txt")
 
             # Phishing URL was on line 4
             self.assertEqual(physical["region"]["startLine"], 4)
+
         finally:
-            os.unlink(tmp_path)
+            os.chdir(original_cwd)
+            import shutil
+            shutil.rmtree(tmp_dir)
 
 
 if __name__ == "__main__":

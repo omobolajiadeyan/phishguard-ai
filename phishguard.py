@@ -119,16 +119,15 @@ def batch_scan_urls(filepath: str, verbose: bool = False, plain: bool = False) -
     results = []
     try:
         with open(filepath, encoding="utf-8") as f:
-            raw_lines = f.readlines()
+            urls = []
+            for line_num, line in enumerate(f, start=1):
+                stripped = line.strip()
+                if stripped and not stripped.startswith("#"):
+                    urls.append((line_num, stripped))
     except FileNotFoundError:
         print(style(f"Error: File '{filepath}' not found.", RED, plain=plain))
         sys.exit(1)
 
-    urls = [
-        (line_num, line.strip())
-        for line_num, line in enumerate(raw_lines, start=1)
-        if line.strip() and not line.strip().startswith("#")
-    ]
     print(style(f"Scanning {len(urls)} URLs...", CYAN, plain=plain))
     phishing_count = 0
     for line_num, url in urls:
