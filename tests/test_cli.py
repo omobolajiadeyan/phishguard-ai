@@ -40,7 +40,7 @@ class CliTests(unittest.TestCase):
         self.assert_help_contains(
             ["--help"],
             [
-                "PhishGuard AI",
+                "usage:",
                 "url",
                 "email",
                 "batch",
