@@ -84,6 +84,28 @@ def _build_sarif_result(result: dict[str, Any]) -> dict[str, Any] | None:
     probability = float(result["probability"])
     fingerprint_source = f"{target_type}:{target}".encode("utf-8")
 
+    location_entry = {
+        "logicalLocations": [
+            {
+                "fullyQualifiedName": target,
+                "kind": target_type,
+            }
+        ]
+    }
+
+    source_path = result.get("source_path")
+    line_number = result.get("line_number")
+
+    if source_path and line_number:
+        location_entry["physicalLocation"] = {
+            "artifactLocation": {
+                "uri": Path(source_path).as_posix()
+            },
+            "region": {
+                "startLine": line_number
+            }
+        }
+
     return {
         "ruleId": rule["id"],
         "level": rule["defaultConfiguration"]["level"],
@@ -93,16 +115,7 @@ def _build_sarif_result(result: dict[str, Any]) -> dict[str, Any] | None:
                 f"with {probability:.1%} phishing risk."
             )
         },
-        "locations": [
-            {
-                "logicalLocations": [
-                    {
-                        "fullyQualifiedName": target,
-                        "kind": target_type,
-                    }
-                ]
-            }
-        ],
+        "locations": [location_entry],
         "partialFingerprints": {
             "phishguard/v1": hashlib.sha256(fingerprint_source).hexdigest()
         },
