@@ -13,20 +13,24 @@ from email_auth import extract_authentication_features
 # Explainable heuristic weights for common phishing indicators.
 # Positive weight = increases phishing probability.
 URL_WEIGHTS = {
-    "url_length":         0.015,   # longer URLs are more suspicious
-    "subdomain_count":    0.18,    # subdomains used to fake legitimacy
-    "has_ip_address":     0.90,    # IP in URL = very suspicious
-    "special_char_count": 0.06,    # many special chars = obfuscation
-    "has_https":         -0.20,    # HTTPS slightly reduces suspicion
-    "digit_ratio":        0.60,    # high digit ratio = suspicious
-    "phishing_keywords":  0.25,    # each matching keyword adds weight
-    "path_depth":         0.04,    # deep paths can hide payloads
-    "suspicious_tld":     0.70,    # .xyz/.tk etc highly suspicious
-    "domain_length":     -0.01,    # short domains slightly safer
-    "url_entropy":        0.12,    # high entropy = randomly generated domain
-    "has_port":           0.40,    # non-standard port = suspicious
-    "has_punycode":       0.10,    # contextual IDNA signal, not malicious alone
-    "has_unicode_hostname": 0.08,  # legitimate IDNs exist; keep weight modest
+    "url_length":            0.015,  # longer URLs are more suspicious
+    "subdomain_count":       0.18,   # subdomains used to fake legitimacy
+    "has_ip_address":        0.90,   # IP in URL = very suspicious
+    "special_char_count":    0.06,   # many special chars = obfuscation
+    "has_https":            -0.20,   # HTTPS slightly reduces suspicion
+    "digit_ratio":           0.60,   # high digit ratio = suspicious
+    "phishing_keywords":     0.25,   # each matching keyword adds weight
+    "path_depth":            0.04,   # deep paths can hide payloads
+    "suspicious_tld":        0.70,   # .xyz/.tk etc highly suspicious
+    "domain_length":        -0.01,   # short domains slightly safer
+    "url_entropy":           0.12,   # high entropy = randomly generated domain
+    "has_port":              0.40,   # non-standard port = suspicious
+    "has_punycode":          0.10,   # contextual IDNA signal, not malicious alone
+    "has_unicode_hostname":  0.08,   # legitimate IDNs exist; keep weight modest
+    "typosquatting_score":   0.85,   # close edit-distance match to a known brand
+    # redirect chain features — only present when --follow-redirects is used
+    "redirect_crossed_domain": 0.65, # chain left the original domain
+    "redirect_hops":           0.05, # each hop adds marginal suspicion
 }
 
 EMAIL_WEIGHTS = {
@@ -48,12 +52,21 @@ URL_BIAS = -1.30
 EMAIL_BIAS = -0.30
 
 
-def score_url(url: str) -> tuple[float, dict]:
+def score_url(
+    url: str,
+    extra_features: dict | None = None,
+) -> tuple[float, dict]:
     """
     Score a URL for phishing likelihood.
+
+    *extra_features* allows callers to inject additional signals (e.g. redirect
+    chain metadata) without modifying the feature extractor.
+
     Returns (probability 0.0-1.0, feature breakdown).
     """
     features = extract_url_features(url)
+    if extra_features:
+        features.update(extra_features)
     raw_score = URL_BIAS + sum(
         features[f] * URL_WEIGHTS[f]
         for f in URL_WEIGHTS
