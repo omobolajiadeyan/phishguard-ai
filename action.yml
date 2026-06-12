@@ -24,7 +24,7 @@ inputs:
     required: false
     default: 'true'
   python-version:
-    description: 'Python version to use (3.10–3.13).'
+    description: 'Python version to use (3.10-3.13).'
     required: false
     default: '3.12'
 
@@ -37,15 +37,13 @@ runs:
   using: 'composite'
   steps:
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
       with:
         python-version: ${{ inputs.python-version }}
 
     - name: Install PhishGuard AI
       shell: bash
-      run: |
-        pip install --quiet \
-          git+https://github.com/omobolajiadeyan/phishguard-ai.git
+      run: python -m pip install --quiet "$GITHUB_ACTION_PATH"
 
     - name: Scan with PhishGuard AI
       id: scan
@@ -79,23 +77,7 @@ runs:
         EXIT_CODE=$?
 
         if [ "$FAIL_ON_PHISHING" = "true" ]; then
-          python - <<'PY'
-import json, os, sys
-try:
-    with open(os.environ["SARIF_OUTPUT"], encoding="utf-8") as fh:
-        data = json.load(fh)
-except Exception as exc:
-    print(f"::error::Failed to read SARIF output: {exc}")
-    sys.exit(2)
-
-phishing = [
-    r
-    for run in data.get("runs", [])
-    for r in run.get("results", [])
-    if r.get("level") == "error"
-]
-sys.exit(1 if phishing else 0)
-PY
+          python "$GITHUB_ACTION_PATH/tools/action_result.py" "$SARIF_OUTPUT"
           SARIF_STATUS=$?
           if [ "$SARIF_STATUS" -eq 1 ]; then
             echo "::error::PhishGuard AI detected phishing URLs. See SARIF output for details."
