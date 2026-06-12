@@ -145,6 +145,8 @@ phishguard batch data/urls.txt \
 
 See the [GitHub Code Scanning guide](docs/GITHUB_CODE_SCANNING.md) for a
 copy-ready workflow using GitHub's official SARIF upload action.
+See the [email JSON and SARIF examples](docs/EMAIL_OUTPUT_EXAMPLES.md) for
+generated SPF, DKIM, and DMARC output and its authentication trust boundary.
 See the [detection model documentation](docs/DETECTION_MODEL.md) for feature
 semantics, limitations, and the evidence required for scoring changes.
 
