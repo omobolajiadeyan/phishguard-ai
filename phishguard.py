@@ -124,16 +124,23 @@ def analyze_email(
 def batch_scan_urls(filepath: str, verbose: bool = False, plain: bool = False) -> list:
     results = []
     try:
-        with open(filepath) as f:
-            urls = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+        with open(filepath, encoding="utf-8") as f:
+            urls = []
+            for line_num, line in enumerate(f, start=1):
+                stripped = line.strip()
+                if stripped and not stripped.startswith("#"):
+                    urls.append((line_num, stripped))
     except FileNotFoundError:
         print(style(f"Error: File '{filepath}' not found.", RED, plain=plain))
         sys.exit(1)
 
     print(style(f"Scanning {len(urls)} URLs...", CYAN, plain=plain))
     phishing_count = 0
-    for url in urls:
+    for line_num, url in urls:
         result = analyze_url(url, verbose=verbose, plain=plain)
+        # Attach source metadata — additive, doesn't change verdict/probability
+        result["source_path"] = filepath
+        result["line_number"] = line_num
         results.append(result)
         if result["verdict"] == "PHISHING":
             phishing_count += 1
