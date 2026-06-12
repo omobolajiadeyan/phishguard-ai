@@ -160,19 +160,19 @@ def analyze_eml(
             if part.get_content_disposition() == "attachment" or part.get_filename():
                 continue
             ct = part.get_content_type()
-            if ct == "text/plain":
+            if ct == "text/plain" and not body:
                 try:
                     body = part.get_content()
                 except Exception:
                     body = ""
-                break
-            if ct == "text/html" and not body:
+            elif ct == "text/html":
                 try:
                     html = part.get_content()
                     extracted_urls.extend(re.findall(r'https?://[^\s<>"\']+', html))
-                    body = re.sub(r"<[^>]+>", " ", html)
+                    if not body:
+                        body = re.sub(r"<[^>]+>", " ", html)
                 except Exception:
-                    body = ""
+                    pass
     else:
         try:
             raw = msg.get_content()
