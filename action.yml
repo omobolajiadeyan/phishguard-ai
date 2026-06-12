@@ -50,20 +50,25 @@ runs:
     - name: Scan with PhishGuard AI
       id: scan
       shell: bash
+      env:
+        URLS_FILE: ${{ inputs.urls-file }}
+        SINGLE_URL: ${{ inputs.url }}
+        SARIF_OUTPUT: ${{ inputs.sarif-output }}
+        FAIL_ON_PHISHING: ${{ inputs.fail-on-phishing }}
       run: |
         set +e
 
-        if [ -n "${{ inputs.urls-file }}" ] && [ -n "${{ inputs.url }}" ]; then
+        if [ -n "$URLS_FILE" ] && [ -n "$SINGLE_URL" ]; then
           echo "::error::Inputs 'url' and 'urls-file' are mutually exclusive."
           exit 1
-        elif [ -n "${{ inputs.urls-file }}" ]; then
-          phishguard batch "${{ inputs.urls-file }}" \
-            --output "${{ inputs.sarif-output }}" \
+        elif [ -n "$URLS_FILE" ]; then
+          phishguard batch "$URLS_FILE" \
+            --output "$SARIF_OUTPUT" \
             --format sarif \
             --plain
-        elif [ -n "${{ inputs.url }}" ]; then
-          phishguard url "${{ inputs.url }}" \
-            --output "${{ inputs.sarif-output }}" \
+        elif [ -n "$SINGLE_URL" ]; then
+          phishguard url "$SINGLE_URL" \
+            --output "$SARIF_OUTPUT" \
             --format sarif \
             --plain
         else
@@ -73,15 +78,31 @@ runs:
 
         EXIT_CODE=$?
 
-        if [ "${{ inputs.fail-on-phishing }}" = "true" ] && \
-           ! python -c "
-        import json, sys
-        data = json.load(open('${{ inputs.sarif-output }}'))
-        phishing = [r for run in data.get('runs', []) for r in run.get('results', []) if r.get('level') == 'error']
-        sys.exit(1 if phishing else 0)
-        "; then
-          echo "::error::PhishGuard AI detected phishing URLs. See SARIF output for details."
-          exit 1
+        if [ "$FAIL_ON_PHISHING" = "true" ]; then
+          python - <<'PY'
+import json, os, sys
+try:
+    with open(os.environ["SARIF_OUTPUT"], encoding="utf-8") as fh:
+        data = json.load(fh)
+except Exception as exc:
+    print(f"::error::Failed to read SARIF output: {exc}")
+    sys.exit(2)
+
+phishing = [
+    r
+    for run in data.get("runs", [])
+    for r in run.get("results", [])
+    if r.get("level") == "error"
+]
+sys.exit(1 if phishing else 0)
+PY
+          SARIF_STATUS=$?
+          if [ "$SARIF_STATUS" -eq 1 ]; then
+            echo "::error::PhishGuard AI detected phishing URLs. See SARIF output for details."
+            exit 1
+          elif [ "$SARIF_STATUS" -eq 2 ]; then
+            exit "$EXIT_CODE"
+          fi
         fi
 
         exit $EXIT_CODE

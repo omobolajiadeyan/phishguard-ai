@@ -157,6 +157,8 @@ def analyze_eml(
     extracted_urls: list[str] = []
     if msg.is_multipart():
         for part in msg.walk():
+            if part.get_content_disposition() == "attachment" or part.get_filename():
+                continue
             ct = part.get_content_type()
             if ct == "text/plain":
                 try:
