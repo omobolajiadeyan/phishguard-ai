@@ -1,0 +1,84 @@
+name: 'PhishGuard AI'
+description: 'Explainable offline phishing detection for URLs and emails. Zero external dependencies.'
+author: 'Omobolaji Adeyan'
+
+branding:
+  icon: 'shield'
+  color: 'red'
+
+inputs:
+  urls-file:
+    description: 'Path to a file containing URLs to scan (one per line). Use this or url, not both.'
+    required: false
+    default: ''
+  url:
+    description: 'A single URL to scan. Use this or urls-file, not both.'
+    required: false
+    default: ''
+  sarif-output:
+    description: 'Path to write SARIF 2.1.0 output. Required for GitHub Code Scanning upload.'
+    required: false
+    default: 'phishguard-results.sarif'
+  fail-on-phishing:
+    description: 'Exit with a non-zero code if any phishing URLs are detected.'
+    required: false
+    default: 'true'
+  python-version:
+    description: 'Python version to use (3.10–3.13).'
+    required: false
+    default: '3.12'
+
+outputs:
+  sarif-path:
+    description: 'Path to the SARIF output file written by this action.'
+    value: ${{ inputs.sarif-output }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install PhishGuard AI
+      shell: bash
+      run: |
+        pip install --quiet \
+          git+https://github.com/omobolajiadeyan/phishguard-ai.git
+
+    - name: Scan with PhishGuard AI
+      id: scan
+      shell: bash
+      run: |
+        set +e
+
+        if [ -n "${{ inputs.urls-file }}" ]; then
+          phishguard batch "${{ inputs.urls-file }}" \
+            --output "${{ inputs.sarif-output }}" \
+            --format sarif \
+            --plain
+        elif [ -n "${{ inputs.url }}" ]; then
+          phishguard url "${{ inputs.url }}" \
+            --output "${{ inputs.sarif-output }}" \
+            --format sarif \
+            --plain
+        else
+          echo "::error::Provide either the 'url' or 'urls-file' input."
+          exit 1
+        fi
+
+        EXIT_CODE=$?
+
+        if [ "${{ inputs.fail-on-phishing }}" = "true" ] && \
+           python -c "
+        import json, sys
+        data = json.load(open('${{ inputs.sarif-output }}'))
+        phishing = [r for run in data.get('runs', []) for r in run.get('results', []) if r.get('level') == 'error']
+        sys.exit(1 if phishing else 0)
+        "; then
+          echo "::error::PhishGuard AI detected phishing URLs. See SARIF output for details."
+          exit 1
+        fi
+
+        exit $EXIT_CODE
