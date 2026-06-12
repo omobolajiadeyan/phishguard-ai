@@ -21,20 +21,17 @@ class TyposquattingScoreTests(unittest.TestCase):
     def test_edit_distance_one_returns_high_score(self):
         """One-character mutations of known domains score 1.0."""
         typosquats = [
-            "https://paypa1.com/login",      # '1' instead of 'l'
-            "https://g00gle.com/search",     # '00' for 'oo'  (dist 2 from google) — let me fix this
-            "https://gogle.com/search",      # missing 'o'
-            "https://githab.com/user",       # 'a' instead of 'u'
+            "https://paypa1.com/login",   # '1' instead of 'l'
+            "https://gogle.com/search",   # missing 'o'
+            "https://githab.com/user",    # 'a' instead of 'u'
         ]
         for url in typosquats:
             with self.subTest(url=url):
-                score = typosquatting_score(url)
-                self.assertGreater(score, 0.0, f"Expected non-zero score for {url}")
+                self.assertEqual(typosquatting_score(url), 1.0, url)
 
     def test_edit_distance_two_returns_medium_score(self):
-        score = typosquatting_score("https://gooogle.com")  # 2 extra 'o' — dist 1 from google.com
-        # gooogle vs google = 1 insertion, so this is dist 1
-        self.assertGreater(score, 0.0)
+        # g00gle vs google: two substitutions ('o'->'0' twice) = distance 2
+        self.assertEqual(typosquatting_score("https://g00gle.com/search"), 0.6)
 
     def test_unrelated_domain_returns_zero(self):
         self.assertEqual(typosquatting_score("https://randomxyz9182.io/page"), 0.0)

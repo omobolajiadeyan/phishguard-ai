@@ -184,17 +184,19 @@ def typosquatting_score(url: str) -> float:
     """
     try:
         hostname = urlparse(url).hostname or ""
-        domain = hostname.lower().removeprefix("www.")
-        if not domain or domain in _TOP_DOMAIN_SET:
-            return 0.0
-        min_dist = min(_levenshtein(domain, ref) for ref in TOP_DOMAINS)
-        if min_dist == 1:
-            return 1.0
-        if min_dist == 2:
-            return 0.6
+    except ValueError:
         return 0.0
-    except Exception:
+
+    domain = hostname.lower().removeprefix("www.")
+    if not domain or domain in _TOP_DOMAIN_SET:
         return 0.0
+
+    min_dist = min(_levenshtein(domain, ref) for ref in TOP_DOMAINS)
+    if min_dist == 1:
+        return 1.0
+    if min_dist == 2:
+        return 0.6
+    return 0.0
 
 
 def extract_url_features(url: str) -> dict:

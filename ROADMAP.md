@@ -22,7 +22,6 @@ tracked in GitHub issues so contributors can discuss and claim scoped tasks.
   headers automatically, and scan all embedded URLs in one command
 - **Reusable GitHub Action** — `uses: omobolajiadeyan/phishguard-ai@main` lets
   any repo integrate phishing URL scanning into their CI pipeline
-- SPF, DKIM, and DMARC `Authentication-Results` signals (merged from v0.4.x)
 - SARIF 2.1.0 output for GitHub Code Scanning and CI security pipelines
 - Calibrated scoring with regression coverage for common legitimate URLs
 - Windows-safe output handling and Python 3.10–3.13 continuous integration

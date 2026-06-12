@@ -29,6 +29,11 @@ def _head(url: str, timeout: int) -> tuple[int, str | None]:
     Raises on connection failure so the caller can record the error.
     """
     parsed = urllib.parse.urlparse(url)
+    if parsed.scheme not in {"http", "https"}:
+        raise ValueError(f"Unsupported redirect scheme: {parsed.scheme or '(missing)'}")
+    if not parsed.hostname:
+        raise ValueError("Redirect URL is missing a hostname")
+
     host = parsed.netloc or parsed.hostname or ""
     path = parsed.path or "/"
     if parsed.query:

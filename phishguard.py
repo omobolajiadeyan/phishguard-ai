@@ -150,8 +150,11 @@ def analyze_eml(
     auth_header = msg.get("Authentication-Results", None)
     auth_results = str(auth_header) if auth_header else None
 
-    # Prefer text/plain body; fall back to tag-stripped HTML
+    # Prefer text/plain body; fall back to tag-stripped HTML.
+    # For HTML parts, extract href/src URLs before stripping tags so links
+    # hidden inside anchor elements are not lost.
     body = ""
+    extracted_urls: list[str] = []
     if msg.is_multipart():
         for part in msg.walk():
             ct = part.get_content_type()
@@ -163,13 +166,19 @@ def analyze_eml(
                 break
             if ct == "text/html" and not body:
                 try:
-                    body = re.sub(r"<[^>]+>", " ", part.get_content())
+                    html = part.get_content()
+                    extracted_urls.extend(re.findall(r'https?://[^\s<>"\']+', html))
+                    body = re.sub(r"<[^>]+>", " ", html)
                 except Exception:
                     body = ""
     else:
         try:
             raw = msg.get_content()
-            body = re.sub(r"<[^>]+>", " ", raw) if msg.get_content_type() == "text/html" else raw
+            if msg.get_content_type() == "text/html":
+                extracted_urls.extend(re.findall(r'https?://[^\s<>"\']+', raw))
+                body = re.sub(r"<[^>]+>", " ", raw)
+            else:
+                body = raw
         except Exception:
             body = ""
 
@@ -183,8 +192,8 @@ def analyze_eml(
     )
     result["source"] = filepath
 
-    # Scan URLs found in the body
-    body_urls = re.findall(r"https?://[^\s<>\"')\]]+", body)
+    # Scan URLs found in the body and any extracted from HTML hrefs
+    body_urls = extracted_urls + re.findall(r"https?://[^\s<>\"')\]]+", body)
     if body_urls:
         unique_urls = list(dict.fromkeys(body_urls))[:10]
         print(style(f"\n  Embedded URLs ({len(unique_urls)} unique):", CYAN, plain=plain))

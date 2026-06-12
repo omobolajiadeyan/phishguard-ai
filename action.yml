@@ -53,7 +53,10 @@ runs:
       run: |
         set +e
 
-        if [ -n "${{ inputs.urls-file }}" ]; then
+        if [ -n "${{ inputs.urls-file }}" ] && [ -n "${{ inputs.url }}" ]; then
+          echo "::error::Inputs 'url' and 'urls-file' are mutually exclusive."
+          exit 1
+        elif [ -n "${{ inputs.urls-file }}" ]; then
           phishguard batch "${{ inputs.urls-file }}" \
             --output "${{ inputs.sarif-output }}" \
             --format sarif \
@@ -71,7 +74,7 @@ runs:
         EXIT_CODE=$?
 
         if [ "${{ inputs.fail-on-phishing }}" = "true" ] && \
-           python -c "
+           ! python -c "
         import json, sys
         data = json.load(open('${{ inputs.sarif-output }}'))
         phishing = [r for run in data.get('runs', []) for r in run.get('results', []) if r.get('level') == 'error']
