@@ -70,18 +70,34 @@ limits on what the current metrics establish.
 
 ## Installation
 
-Install the verified `v0.4.0` wheel directly from GitHub Releases:
+Install the verified `v0.5.1` wheel directly from GitHub Releases:
 
 ```bash
 python -m pip install \
-  https://github.com/omobolajiadeyan/phishguard-ai/releases/download/v0.4.0/phishguard_ai-0.4.0-py3-none-any.whl
+  https://github.com/omobolajiadeyan/phishguard-ai/releases/download/v0.5.1/phishguard_ai-0.5.1-py3-none-any.whl
 phishguard --help
 ```
 
 The release also includes a source archive, `SHA256SUMS`, and signed build
 provenance. See the
-[v0.4.0 release](https://github.com/omobolajiadeyan/phishguard-ai/releases/tag/v0.4.0)
+[v0.5.1 release](https://github.com/omobolajiadeyan/phishguard-ai/releases/tag/v0.5.1)
 for downloads and verification details.
+
+## GitHub Action
+
+Use the stable Marketplace release to scan a URL in CI:
+
+```yaml
+- name: Scan URL with PhishGuard AI
+  uses: omobolajiadeyan/phishguard-ai@v0.5.1
+  with:
+    url: https://example.com
+    sarif-output: phishguard-results.sarif
+```
+
+See the
+[GitHub Marketplace listing](https://github.com/marketplace/actions/phishguard-ai-phishing-detector)
+for available inputs and version selection.
 
 For development, install from a clone:
 

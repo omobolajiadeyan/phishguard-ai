@@ -7,7 +7,7 @@ offline and does not send the input to a remote service.
 
 ```bash
 python -m pip install \
-  https://github.com/omobolajiadeyan/phishguard-ai/releases/download/v0.4.0/phishguard_ai-0.4.0-py3-none-any.whl
+  https://github.com/omobolajiadeyan/phishguard-ai/releases/download/v0.5.1/phishguard_ai-0.5.1-py3-none-any.whl
 ```
 
 ## 2. Compare a Legitimate and Suspicious URL
@@ -31,18 +31,10 @@ phishguard url "http://192.0.2.10/secure-login/verify" \
 For GitHub Code Scanning and CI usage, follow the
 [SARIF integration guide](GITHUB_CODE_SCANNING.md).
 
-## Development Preview: Email Authentication Results
+## Email Authentication Results
 
-SPF, DKIM, and DMARC analysis is merged to `main` but is not included in the
-v0.4.0 wheel. Install the current source before trying this preview:
-
-```bash
-git clone https://github.com/omobolajiadeyan/phishguard-ai.git
-cd phishguard-ai
-python -m pip install --editable .
-```
-
-Then analyze a synthetic header value:
+SPF, DKIM, and DMARC analysis is included in `v0.5.1`. Analyze a synthetic
+header value:
 
 ```bash
 phishguard email \
