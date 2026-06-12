@@ -19,6 +19,33 @@ jobs:
       - name: Reject unsafe repository content
         run: python tools/repository_policy.py
 
+  marketplace-action:
+    name: Marketplace action
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - name: Run the repository action
+        id: phishguard
+        uses: ./
+        with:
+          url: https://example.com
+          sarif-output: phishguard-action-results.sarif
+          fail-on-phishing: "false"
+      - name: Validate action output
+        env:
+          SARIF_PATH: ${{ steps.phishguard.outputs.sarif-path }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["SARIF_PATH"])
+          data = json.loads(path.read_text(encoding="utf-8"))
+          assert data["version"] == "2.1.0"
+          assert data["runs"], "SARIF output must contain at least one run"
+          PY
+
   test:
     runs-on: ubuntu-latest
     strategy:

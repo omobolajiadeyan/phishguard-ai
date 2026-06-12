@@ -2,6 +2,28 @@
 
 All notable changes to PhishGuard AI are documented here.
 
+## [0.5.1] - 2026-06-12
+
+### Added
+
+- Optional SPF, DKIM, and DMARC `Authentication-Results` parsing with
+  conservative, explainable email risk signals.
+- A one-minute demo, first-contribution guide, support policy, and structured
+  documentation issue template.
+- A CI smoke test that executes the root `action.yml` and validates its SARIF
+  output before release.
+
+### Changed
+
+- Renamed the Marketplace action to `PhishGuard AI Phishing Detector` using
+  Marketplace-compatible characters.
+- Made the composite action install PhishGuard from its checked-out action
+  directory, so consumers receive the implementation pinned by their selected
+  tag instead of code from a moving branch.
+- Pinned the action's Python setup dependency to a reviewed commit.
+- Refreshed the roadmap with scoped Python API, email-authentication, and
+  benchmark tasks.
+
 ## [0.5.0] - 2026-06-11
 
 ### Added
@@ -36,20 +58,6 @@ All notable changes to PhishGuard AI are documented here.
   the email body analysis and each embedded URL.
 - `pyproject.toml` version bumped from `0.5.0.dev0` to `0.5.0`.
 - `redirect` module added to `py-modules` in `pyproject.toml`.
-
-## [Unreleased]
-
-### Added
-
-- Optional SPF, DKIM, and DMARC `Authentication-Results` parsing with
-  conservative, explainable email risk signals.
-- A one-minute demo, first-contribution guide, support policy, and structured
-  documentation issue template.
-
-### Changed
-
-- Started the `0.5.0` development cycle and added direct release-wheel installation guidance.
-- Refreshed the roadmap with scoped Python API, email-authentication, and benchmark tasks.
 
 ## [0.4.0] - 2026-06-09
 
