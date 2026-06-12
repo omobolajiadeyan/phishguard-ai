@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from tools.build_public_benchmark_slice import sanitize_phishing_url
 from tools.evaluate_url_benchmark import (
     BenchmarkError,
     BenchmarkSample,
@@ -31,6 +32,37 @@ class BenchmarkFixtureTests(unittest.TestCase):
         self.assertEqual(len(samples), 14)
         self.assertEqual(samples[0].id, "legitimate-001")
         self.assertEqual(samples[-1].id, "phishing-007")
+
+    def test_public_fixture_has_attribution_and_sanitized_phishing_hosts(self):
+        fixture = Path("data/public_benchmark_urls.jsonl")
+        records = [
+            json.loads(line)
+            for line in fixture.read_text(encoding="utf-8").splitlines()
+        ]
+
+        self.assertEqual(len(records), 10)
+        self.assertEqual(records[0]["id"], "public-legitimate-001")
+        self.assertEqual(records[-1]["id"], "public-phishing-005")
+        for record in records:
+            self.assertEqual(record["source_license"], "CC BY 4.0")
+            self.assertEqual(record["source_doi"], "10.17632/65z9twcx3r.1")
+            self.assertEqual(record["retrieved_on"], "2026-06-12")
+            self.assertEqual(len(record["source_url_sha256"]), 64)
+        for record in records[5:]:
+            self.assertIn(".example", record["url"])
+            self.assertNotIn("source_url", record)
+
+        self.assertEqual(len(load_samples(fixture)), 10)
+
+    def test_phishing_url_sanitization_preserves_path_and_query(self):
+        sanitized = sanitize_phishing_url(
+            "https://login.bad.invalid/account?continue=1#section"
+        )
+
+        self.assertEqual(
+            sanitized,
+            "https://login.bad.example/account?continue=1",
+        )
 
     def test_unknown_label_is_rejected(self):
         with tempfile.TemporaryDirectory() as temp_dir:
