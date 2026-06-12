@@ -10,12 +10,80 @@ from pathlib import Path
 
 import phishguard
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
 
 class CliTests(unittest.TestCase):
+    def run_cli(self, *args):
+        return subprocess.run(
+            [sys.executable, str(PROJECT_ROOT / "phishguard.py"), *args],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=False,
+        )
+
     def assert_plain_output(self, output):
         self.assertTrue(output.isascii(), output)
         self.assertNotIn("\033[", output)
         self.assertIn("-" * 60, output)
+
+    def assert_help_contains(self, args, expected_terms):
+        result = self.run_cli(*args)
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for term in expected_terms:
+            self.assertIn(term, result.stdout)
+
+    def test_root_help_lists_available_commands(self):
+        self.assert_help_contains(
+            ["--help"],
+            [
+                "PhishGuard AI",
+                "url",
+                "email",
+                "batch",
+            ],
+        )
+
+    def test_url_help_lists_input_and_output_options(self):
+        self.assert_help_contains(
+            ["url", "--help"],
+            [
+                "target",
+                "--verbose",
+                "--output",
+                "--format",
+                "--plain",
+            ],
+        )
+
+    def test_email_help_lists_authentication_and_output_options(self):
+        self.assert_help_contains(
+            ["email", "--help"],
+            [
+                "--subject",
+                "--body",
+                "--authentication-results",
+                "--verbose",
+                "--output",
+                "--format",
+                "--plain",
+            ],
+        )
+
+    def test_batch_help_lists_file_and_output_options(self):
+        self.assert_help_contains(
+            ["batch", "--help"],
+            [
+                "file",
+                "--verbose",
+                "--output",
+                "--format",
+                "--plain",
+            ],
+        )
 
     def test_url_command_handles_limited_console_encoding(self):
         environment = os.environ.copy()
