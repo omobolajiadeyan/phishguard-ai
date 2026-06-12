@@ -34,7 +34,8 @@ def _head(url: str, timeout: int) -> tuple[int, str | None]:
     if not parsed.hostname:
         raise ValueError("Redirect URL is missing a hostname")
 
-    host = parsed.netloc or parsed.hostname or ""
+    hostname = parsed.hostname or ""
+    port = parsed.port  # None means use the scheme default
     path = parsed.path or "/"
     if parsed.query:
         path = f"{path}?{parsed.query}"
@@ -44,10 +45,10 @@ def _head(url: str, timeout: int) -> tuple[int, str | None]:
     if parsed.scheme == "https":
         ctx = ssl.create_default_context()
         conn: http.client.HTTPConnection = http.client.HTTPSConnection(
-            host, timeout=timeout, context=ctx
+            hostname, port=port, timeout=timeout, context=ctx
         )
     else:
-        conn = http.client.HTTPConnection(host, timeout=timeout)
+        conn = http.client.HTTPConnection(hostname, port=port, timeout=timeout)
 
     try:
         conn.request("HEAD", path, headers=headers)

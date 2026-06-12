@@ -30,7 +30,7 @@ TOP_DOMAINS = [
     "adobe.com", "salesforce.com", "zoom.us", "slack.com", "discord.com",
     "spotify.com", "twitch.tv", "tiktok.com", "whatsapp.com", "telegram.org",
     "icloud.com", "live.com", "outlook.com", "office.com", "onedrive.com",
-    "yahoo.com", "gmail.com", "protonmail.com", "twitter.com", "pinterest.com",
+    "yahoo.com", "gmail.com", "protonmail.com", "pinterest.com",
     "etsy.com", "shopify.com", "stripe.com", "coinbase.com", "binance.com",
     "steamcommunity.com", "twilio.com", "cloudflare.com", "heroku.com",
 ]
