@@ -2,6 +2,41 @@
 
 All notable changes to PhishGuard AI are documented here.
 
+## [0.5.0] - 2026-06-11
+
+### Added
+
+- **URL redirect chain tracing** (`--follow-redirects N`): follow up to N HTTP
+  hops using only the Python standard library and score the final destination
+  URL. Flags when a redirect chain crosses domain boundaries. Degrades
+  gracefully when the network is unavailable — the tool remains fully offline
+  without the flag.
+- **Typosquatting / lookalike detection**: a pure-Python Levenshtein comparison
+  against 50 well-known brand domains. Edit-distance-1 matches score 1.0,
+  distance-2 matches score 0.6. Exact legitimate domain matches are excluded
+  from scoring.
+- **`.eml` file analysis** (`phishguard eml <file>`): parse RFC 5322 email
+  files using the Python standard library `email` module. Extracts subject,
+  body, and `Authentication-Results` header automatically, then runs both
+  email scoring and a URL scan of every link found in the body.
+- **Reusable GitHub Action** (`action.yml`): any repository can use
+  `omobolajiadeyan/phishguard-ai@main` in a workflow to scan URLs and upload
+  SARIF findings to GitHub Code Scanning.
+- **Self-scan CI workflow** (`.github/workflows/phishguard-self-scan.yml`):
+  PhishGuard scans its own test URLs on every push and pull request, uploading
+  results to GitHub Code Scanning.
+- `redirect_crossed_domain` and `redirect_hops` optional model features,
+  active only when redirect tracing is used.
+
+### Changed
+
+- `score_url` now accepts an optional `extra_features` dict for injecting
+  redirect chain signals without modifying the feature extractor.
+- `phishguard eml` verbose output includes a per-feature breakdown for both
+  the email body analysis and each embedded URL.
+- `pyproject.toml` version bumped from `0.5.0.dev0` to `0.5.0`.
+- `redirect` module added to `py-modules` in `pyproject.toml`.
+
 ## [Unreleased]
 
 ### Added

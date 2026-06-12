@@ -20,6 +20,21 @@ PHISHING_KEYWORDS = [
 TRUSTED_TLDS = {".com", ".org", ".gov", ".edu", ".co.uk", ".net"}
 SUSPICIOUS_TLDS = {".xyz", ".top", ".click", ".tk", ".ml", ".ga", ".cf", ".gq", ".pw"}
 
+# Well-known domains used as typosquatting reference targets.
+# Domains that are edit-distance 1 or 2 from any entry are flagged.
+TOP_DOMAINS = [
+    "google.com", "facebook.com", "amazon.com", "apple.com", "microsoft.com",
+    "paypal.com", "netflix.com", "instagram.com", "twitter.com", "linkedin.com",
+    "github.com", "youtube.com", "reddit.com", "dropbox.com", "ebay.com",
+    "walmart.com", "chase.com", "bankofamerica.com", "wellsfargo.com",
+    "adobe.com", "salesforce.com", "zoom.us", "slack.com", "discord.com",
+    "spotify.com", "twitch.tv", "tiktok.com", "whatsapp.com", "telegram.org",
+    "icloud.com", "live.com", "outlook.com", "office.com", "onedrive.com",
+    "yahoo.com", "gmail.com", "protonmail.com", "twitter.com", "pinterest.com",
+    "etsy.com", "shopify.com", "stripe.com", "coinbase.com", "binance.com",
+    "steamcommunity.com", "twilio.com", "cloudflare.com", "heroku.com",
+]
+
 
 # ──────────────────────────────────────────────
 # URL Features
@@ -138,6 +153,52 @@ def has_unicode_hostname(url: str) -> int:
         return 0
 
 
+# ──────────────────────────────────────────────
+# Typosquatting Detection
+# ──────────────────────────────────────────────
+
+_TOP_DOMAIN_SET = frozenset(TOP_DOMAINS)
+
+
+def _levenshtein(s1: str, s2: str) -> int:
+    """Pure-Python Levenshtein distance with O(min(m,n)) space."""
+    if len(s1) < len(s2):
+        s1, s2 = s2, s1
+    prev = list(range(len(s2) + 1))
+    for i, c1 in enumerate(s1, 1):
+        curr = [i]
+        for j, c2 in enumerate(s2, 1):
+            curr.append(min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + (c1 != c2)))
+        prev = curr
+    return prev[-1]
+
+
+def typosquatting_score(url: str) -> float:
+    """
+    Return a confidence score (0.0–1.0) that the domain is a typosquat.
+
+    Exact matches with a known-good domain return 0.0 (legitimate).
+    Edit distance 1 returns 1.0 (very likely typosquat).
+    Edit distance 2 returns 0.6 (suspicious).
+    Anything further returns 0.0 (no match).
+    """
+    try:
+        hostname = urlparse(url).hostname or ""
+    except ValueError:
+        return 0.0
+
+    domain = hostname.lower().removeprefix("www.")
+    if not domain or domain in _TOP_DOMAIN_SET:
+        return 0.0
+
+    min_dist = min(_levenshtein(domain, ref) for ref in TOP_DOMAINS)
+    if min_dist == 1:
+        return 1.0
+    if min_dist == 2:
+        return 0.6
+    return 0.0
+
+
 def extract_url_features(url: str) -> dict:
     """Extract all URL features and return as a named dict."""
     return {
@@ -155,6 +216,7 @@ def extract_url_features(url: str) -> dict:
         "has_port":              has_port(url),
         "has_punycode":          has_punycode(url),
         "has_unicode_hostname":  has_unicode_hostname(url),
+        "typosquatting_score":   typosquatting_score(url),
     }
 
 
