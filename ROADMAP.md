@@ -20,7 +20,7 @@ tracked in GitHub issues so contributors can discuss and claim scoped tasks.
   well-known brand domains catches `paypa1.com`, `g00gle.com`, `githab.com`
 - **`.eml` file analysis** — parse full RFC 5322 email files, extract auth
   headers automatically, and scan all embedded URLs in one command
-- **Reusable GitHub Action** — `uses: omobolajiadeyan/phishguard-ai@main` lets
+- **Reusable GitHub Action** — `uses: omobolajiadeyan/phishguard-ai@v0.5.1` lets
   any repo integrate phishing URL scanning into their CI pipeline
 - SARIF 2.1.0 output for GitHub Code Scanning and CI security pipelines
 - Calibrated scoring with regression coverage for common legitimate URLs
