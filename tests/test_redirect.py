@@ -8,7 +8,7 @@ depend on a real port being free.
 import unittest
 from unittest.mock import patch
 
-from redirect import follow_redirects, _domain
+from redirect import _domain, _head, follow_redirects
 
 _UNREACHABLE = "http://example.invalid:19999/unreachable"
 
@@ -75,12 +75,14 @@ class RedirectResultContractTests(unittest.TestCase):
 
     def test_credential_url_uses_hostname_not_netloc(self):
         """netloc includes userinfo; _head must connect to the real host only."""
-        with patch("redirect._head", side_effect=ConnectionRefusedError("mocked")) as mock_head:
-            follow_redirects("http://paypal.com@evil.com/login", timeout=1)
-        # _head should have been called — the ValueError for missing hostname
-        # fires before _head is reached, so if called it means the URL parsed cleanly.
-        # The important thing is no unhandled exception was raised.
-        _ = mock_head
+        with patch("redirect.http.client.HTTPConnection") as connection:
+            response = connection.return_value.getresponse.return_value
+            response.status = 200
+            response.getheader.return_value = None
+
+            _head("http://paypal.com@evil.com/login", timeout=1)
+
+        connection.assert_called_once_with("evil.com", port=None, timeout=1)
 
 
 if __name__ == "__main__":

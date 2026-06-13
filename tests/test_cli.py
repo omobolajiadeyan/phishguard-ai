@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import phishguard
 
@@ -22,6 +23,29 @@ class CliTests(unittest.TestCase):
             text=True,
             encoding="utf-8",
             check=False,
+        )
+
+    def test_redirect_error_is_visible_when_no_hop_completed(self):
+        chain = {
+            "final_url": "https://example.com",
+            "hops": 0,
+            "chain": ["https://example.com"],
+            "crossed_domain": False,
+            "error": "mocked connection failure",
+        }
+        output = StringIO()
+
+        with patch("phishguard.follow_redirects", return_value=chain):
+            with redirect_stdout(output):
+                phishguard.analyze_url(
+                    "https://example.com",
+                    plain=True,
+                    follow_redirects_hops=3,
+                )
+
+        self.assertIn(
+            "redirect trace stopped early - mocked connection failure",
+            output.getvalue(),
         )
 
     def assert_plain_output(self, output):

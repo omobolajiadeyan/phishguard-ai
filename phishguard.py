@@ -115,8 +115,14 @@ def analyze_url(
                 print(f"  Hop {i:<3} : {hop}")
         if chain_info["crossed_domain"]:
             print(style("  Warning : redirect crossed domain boundaries", YELLOW, plain=plain))
-        if chain_info.get("error"):
-            print(style(f"  Note    : redirect trace stopped early — {chain_info['error']}", GRAY, plain=plain))
+    if chain_info.get("error"):
+        print(
+            style(
+                f"  Note    : redirect trace stopped early - {chain_info['error']}",
+                GRAY,
+                plain=plain,
+            )
+        )
     print(f"  Verdict : {style(verdict, VERDICT_COLOR[verdict], BOLD, plain=plain)}")
     print(f"  Risk    : {probability_bar(prob, plain=plain)}")
 
