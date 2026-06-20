@@ -8,6 +8,7 @@ using live phishing infrastructure or external API keys.
 - Windows PowerShell
 - Python 3.10 through 3.13
 - Internet access to download the release wheel from GitHub Releases
+- GitHub CLI (`gh`) for optional release provenance verification
 
 Check Python first:
 
