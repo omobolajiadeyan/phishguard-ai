@@ -24,6 +24,9 @@ built on a maintainer workstation.
 The release workflow fails when the tag without its leading `v` does not
 exactly match the package version.
 
+For PyPI preparation, see [PYPI_PUBLISHING.md](PYPI_PUBLISHING.md). PyPI upload
+should use Trusted Publishing rather than a long-lived API token.
+
 For a Marketplace release, open the root `action.yml` on GitHub and use its
 **Draft a release** banner. Select **Publish this Action to the GitHub
 Marketplace** before publishing the release. Creating a release through the
