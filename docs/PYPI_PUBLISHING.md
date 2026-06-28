@@ -28,13 +28,28 @@ Benefits:
    - owner: `omobolajiadeyan`
    - repository: `phishguard-ai`
    - workflow: `.github/workflows/release.yml`
-   - environment: optional, but recommended for manual approval
+   - environment: `pypi`
 3. Confirm the package metadata:
    - project name: `phishguard-ai`
    - console command: `phishguard`
    - supported Python versions: 3.10 through 3.13
    - license: MIT
 4. Publish a test release to TestPyPI before publishing to PyPI.
+
+## GitHub Workflow Status
+
+The release workflow is prepared for Trusted Publishing:
+
+- tagged releases build and validate the wheel and source distribution;
+- build artifacts are uploaded for the publish job;
+- the `publish-pypi` job runs only for `v*` tags;
+- the publish job uses the protected `pypi` environment;
+- publishing uses OpenID Connect (`id-token: write`) instead of a stored PyPI
+  token.
+
+Before the first production publish, create a GitHub environment named `pypi`
+and add manual approval protection. Then configure the matching Trusted
+Publisher on PyPI.
 
 ## Release Checklist
 
@@ -88,4 +103,3 @@ Once the package is available on PyPI:
 - Do not publish a tag unless Tests, CodeQL, repository policy, package build,
   and wheel-installation checks pass.
 - Do not reuse a version number. PyPI versions are immutable after upload.
-
