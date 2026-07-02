@@ -34,6 +34,38 @@ Before adding a public dataset, document its source, license, retrieval date,
 and sanitization process. Do not commit active phishing URLs, private data, or
 credentials.
 
+## Adding Public-Safe Cases
+
+Benchmark pull requests should keep samples reviewable and safe to store in
+the repository. Use JSON Lines, with one object per line, and include these
+fields for every record:
+
+- `id`: a stable, descriptive identifier such as `legitimate-008` or
+  `public-phishing-006`
+- `label`: either `legitimate` or `phishing`
+- `url`: the URL that will be evaluated
+- `rationale`: the reason the sample belongs in the fixture
+- `provenance`: the source category, for example `synthetic`, `reserved`, or
+  `public-dataset`
+
+Public-derived cases should also include enough provenance for a reviewer to
+recreate the sample later: source name, source URL or DOI, license, retrieval
+date, source row or record ID when available, and any source-file hash used by
+the builder. If the original input was unsafe, store only a hash of the
+original value and document the sanitization rule.
+
+Safe benchmark inputs must not contain live phishing URLs, credentials,
+personal data, private email, tracking links, or payloads that encourage a
+reader to visit hostile infrastructure. Prefer reserved domains such as
+`.example`, clearly synthetic lures, documentation pages, or licensed public
+datasets whose risky hostnames have been neutralized.
+
+When adding a case, explain what regression risk it protects against. The
+benchmark is a small regression fixture, not an accuracy study, so pull
+requests must not describe its precision, recall, or score output as
+population-level accuracy, calibrated probability, or production detection
+effectiveness.
+
 ## Licensed Public-Dataset Slice
 
 `data/public_benchmark_urls.jsonl` is a deterministic 10-record slice derived

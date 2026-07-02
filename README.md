@@ -163,7 +163,8 @@ The command reports ordered predictions, confusion-matrix counts, precision,
 recall, and false-positive rate. These are fixture metrics for detecting
 regressions, not population-level accuracy or calibration estimates. See the
 [benchmark documentation](docs/BENCHMARK.md) for the synthetic fixture, the
-licensed URL-Phish-derived slice, sanitization, and reporting rules.
+licensed URL-Phish-derived slice, safe-case contribution guidance,
+sanitization, and reporting rules.
 
 ## Example Output
 
