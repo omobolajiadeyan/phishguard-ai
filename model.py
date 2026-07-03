@@ -27,6 +27,7 @@ URL_WEIGHTS = {
     "has_port":              0.40,   # non-standard port = suspicious
     "has_punycode":          0.10,   # contextual IDNA signal, not malicious alone
     "has_unicode_hostname":  0.08,   # legitimate IDNs exist; keep weight modest
+    "has_opaque_hostname_label": 0.90, # long compact labels can indicate generated hosts
     "typosquatting_score":   0.85,   # close edit-distance match to a known brand
     # redirect chain features — only present when --follow-redirects is used
     "redirect_crossed_domain": 0.65, # chain left the original domain

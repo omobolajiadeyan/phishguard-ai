@@ -10,6 +10,7 @@ from tools.evaluate_url_benchmark import (
     Prediction,
     calculate_metrics,
     confusion_matrix,
+    evaluate,
     load_samples,
     main,
 )
@@ -89,6 +90,14 @@ class BenchmarkFixtureTests(unittest.TestCase):
             fixture.write_text("{not-json}\n", encoding="utf-8")
 
             self.assertEqual(main([str(fixture)]), 1)
+
+    def test_public_fixture_recall_regression_target(self):
+        predictions = evaluate(load_samples("data/public_benchmark_urls.jsonl"))
+        counts = confusion_matrix(predictions)
+        metrics = calculate_metrics(counts)
+
+        self.assertEqual(counts["false_positive"], 0)
+        self.assertGreaterEqual(metrics["recall"], 0.80)
 
 
 class BenchmarkMetricTests(unittest.TestCase):

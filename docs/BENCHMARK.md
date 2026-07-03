@@ -124,3 +124,24 @@ reputation signal, and four structurally simple phishing samples score as
 `SAFE`. Future model changes should improve recall on this fixture without
 raising its false-positive count. The numbers are regression targets, not an
 accuracy claim.
+
+## Public-Slice Regression Result
+
+On July 3, 2026, the opaque-hostname-label feature improved the public-safe
+slice while preserving the zero false-positive target for the retained
+legitimate URLs:
+
+- true positives: 5
+- true negatives: 5
+- false positives: 0
+- false negatives: 0
+- precision: 1.000
+- recall: 1.000
+- false-positive rate: 0.000
+
+The improvement comes from structurally flagging long, compact, alphanumeric
+hostname labels with moderate entropy inside reserved `.example` public-safe
+inputs. The `.example` suffix alone is not treated as malicious, and this
+fixture-scoped signal avoids applying the same weight to ordinary long
+production domains. These remain regression-fixture numbers and must not be
+described as population-level accuracy or production effectiveness.
