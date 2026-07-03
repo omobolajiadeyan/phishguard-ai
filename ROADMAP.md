@@ -8,7 +8,8 @@ tracked in GitHub issues so contributors can discuss and claim scoped tasks.
 
 | Priority | Work | Status |
 | --- | --- | --- |
-| Integration | [Batch source locations in SARIF](https://github.com/omobolajiadeyan/phishguard-ai/issues/5) | In progress in PR #6 |
+| Community feedback | [SPF/DKIM/DMARC scoring and SARIF output feedback](https://github.com/omobolajiadeyan/phishguard-ai/issues/45) | Feedback wanted |
+| Evaluation | [Improve public benchmark recall without increasing false positives](https://github.com/omobolajiadeyan/phishguard-ai/issues/46) | Help wanted |
 | API | [Stable public Python API guide](https://github.com/omobolajiadeyan/phishguard-ai/issues/16) | Help wanted |
 | Evaluation | [Public-data benchmark provenance](https://github.com/omobolajiadeyan/phishguard-ai/issues/18) | Research help wanted |
 
@@ -31,6 +32,8 @@ tracked in GitHub issues so contributors can discuss and claim scoped tasks.
 ## Next
 
 - REST API / `--serve` mode for SIEM and proxy integrations
+- Improve public benchmark recall while preserving false-positive discipline
+  (#46)
 - Expand the benchmark with public-data provenance (#18)
 - Stable public Python API documentation (#16)
 
