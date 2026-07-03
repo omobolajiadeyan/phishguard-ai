@@ -13,6 +13,7 @@ that evidence, and what would strengthen future adoption.
 | Project benchmark | [BENCHMARK.md](BENCHMARK.md) | Regression fixture metrics for public-safe test data. |
 | Detection model | [DETECTION_MODEL.md](DETECTION_MODEL.md) | Feature semantics, limitations, and scoring-change requirements. |
 | Code scanning workflow | [GITHUB_CODE_SCANNING.md](GITHUB_CODE_SCANNING.md) | SARIF integration path for GitHub Code Scanning. |
+| Adoption guide | [ADOPTION.md](ADOPTION.md) | Safe path for third-party workflow examples and showcase reports. |
 | First contribution guide | [FIRST_CONTRIBUTION.md](FIRST_CONTRIBUTION.md) | Scoped path for new contributors. |
 
 ## What the Metrics Mean
