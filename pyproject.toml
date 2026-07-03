@@ -40,6 +40,9 @@ Homepage = "https://github.com/omobolajiadeyan/phishguard-ai"
 Documentation = "https://github.com/omobolajiadeyan/phishguard-ai#readme"
 Issues = "https://github.com/omobolajiadeyan/phishguard-ai/issues"
 Changelog = "https://github.com/omobolajiadeyan/phishguard-ai/blob/main/CHANGELOG.md"
+Marketplace = "https://github.com/marketplace/actions/phishguard-ai-phishing-detector"
+Repository = "https://github.com/omobolajiadeyan/phishguard-ai"
+Security = "https://github.com/omobolajiadeyan/phishguard-ai/security/policy"
 
 [project.scripts]
 phishguard = "phishguard:main"

@@ -9,16 +9,47 @@
 [![GitHub forks](https://img.shields.io/github/forks/omobolajiadeyan/phishguard-ai?style=flat-square)](https://github.com/omobolajiadeyan/phishguard-ai/forks)
 [![Release downloads](https://img.shields.io/github/downloads/omobolajiadeyan/phishguard-ai/total?style=flat-square)](https://github.com/omobolajiadeyan/phishguard-ai/releases)
 
-An explainable phishing detection engine that analyzes URLs and emails in real
-time using feature engineering and heuristic risk scoring. It works offline
-and requires no API key.
+An explainable phishing detection engine for URLs and email. PhishGuard AI
+runs offline, requires no API key, and explains which features caused a URL or
+message to be flagged.
+
+Use it when you need a lightweight security check that is easy to run in a
+terminal, CI workflow, GitHub Action, or code-scanning pipeline.
 
 Created and maintained by
 [Omobolaji Adeyan](https://github.com/omobolajiadeyan), a cybersecurity
 engineer focused on practical Python security tooling, threat detection, and
 security automation.
 
-Built because most phishing detection tools are either black-box cloud services or require expensive ML training pipelines. PhishGuard runs entirely offline and explains exactly *why* it flagged something.
+Built because many phishing detection tools are either black-box cloud services
+or require expensive ML training pipelines. PhishGuard keeps the first version
+small, inspectable, and reproducible: standard-library Python, documented
+signals, regression tests, JSON output, and SARIF 2.1.0 for GitHub Code
+Scanning.
+
+## Why People Use It
+
+- **Explainable by default:** each result includes the URL, verdict, risk score,
+  and triggered evidence.
+- **Offline and private:** no input is sent to an external API.
+- **CI friendly:** JSON and SARIF output work in automation and security review.
+- **Zero runtime dependencies:** useful for restricted environments.
+- **Conservative email-auth scoring:** SPF, DKIM, and DMARC failures are
+  supporting evidence, not automatic proof of phishing.
+
+## Best Fit
+
+PhishGuard is useful for:
+
+- security engineers adding lightweight phishing checks to CI;
+- SOC analysts who want reproducible examples and feature explanations;
+- educators demonstrating phishing indicators without live malicious links;
+- developers who want to test URL and email risk signals locally.
+
+It is not a replacement for enterprise email security, threat intelligence
+feeds, or a statistically trained production model. See
+[BENCHMARK.md](docs/BENCHMARK.md) and
+[DETECTION_MODEL.md](docs/DETECTION_MODEL.md) for current evidence and limits.
 
 ## How It Works
 
@@ -48,12 +79,12 @@ validated as a statistically trained model.
 
 - Real-time URL and email scoring with probability output
 - Batch scan a list of URLs from a file
-- Explainable results — see which features triggered the alert
+- Explainable results - see which features triggered the alert
 - Three verdict levels: `SAFE`, `SUSPICIOUS`, `PHISHING`
 - JSON export for integration into SOC workflows
 - SARIF 2.1.0 export for GitHub Code Scanning and CI security pipelines
-- Zero dependencies — pure Python standard library
-- Offline — no data sent anywhere
+- Zero dependencies - pure Python standard library
+- Offline - no data sent anywhere
 
 ## Try It in One Minute
 
@@ -86,6 +117,23 @@ provenance. See the
 for downloads and verification details.
 Windows users can follow the copy-paste
 [Windows install verification guide](docs/WINDOWS_INSTALL.md).
+
+## Quick Scan
+
+After installation, run one safe example and one suspicious synthetic example:
+
+```bash
+phishguard url "https://www.example.com/account" --plain
+phishguard url "http://192.0.2.10/secure-login/verify" --verbose --plain
+```
+
+For a CI-style result:
+
+```bash
+phishguard url "http://192.0.2.10/secure-login/verify" \
+  --format sarif \
+  --output phishguard-results.sarif
+```
 
 ## GitHub Action
 
@@ -151,6 +199,8 @@ See the [GitHub Code Scanning guide](docs/GITHUB_CODE_SCANNING.md) for a
 copy-ready workflow using GitHub's official SARIF upload action.
 See the [email JSON and SARIF examples](docs/EMAIL_OUTPUT_EXAMPLES.md) for
 generated SPF, DKIM, and DMARC output and its authentication trust boundary.
+See [common use cases](docs/USE_CASES.md) for CI scanning, SOC triage,
+education demos, email-authentication experiments, and benchmark work.
 See the [detection model documentation](docs/DETECTION_MODEL.md) for feature
 semantics, limitations, and the evidence required for scoring changes.
 
@@ -176,10 +226,10 @@ sanitization, and reporting rules.
   PHISHGUARD AI
   AI-powered phishing detection
 
-────────────────────────────────────────────────────────────
+------------------------------------------------------------
   URL     : http://paypa1-secure-login.xyz/verify
   Verdict : PHISHING
-  Risk    : ████████████████████  94.2%
+  Risk    : ####################  94.2%
 
   Feature breakdown:
     url_length           : 38
@@ -194,14 +244,14 @@ sanitization, and reporting rules.
 
 ```
 phishguard-ai/
-├── phishguard.py    # CLI entrypoint — commands: url, email, batch
-├── email_auth.py    # SPF, DKIM, and DMARC result parsing
-├── features.py      # Feature extraction (URL + email)
-├── model.py         # Weighted scoring model + sigmoid normalisation
-├── reporting.py     # Native JSON and SARIF 2.1.0 serialization
-├── data/
-│   └── urls.txt     # Sample URLs for batch testing
-└── README.md
+|-- phishguard.py    # CLI entrypoint - commands: url, email, batch
+|-- email_auth.py    # SPF, DKIM, and DMARC result parsing
+|-- features.py      # Feature extraction (URL + email)
+|-- model.py         # Weighted scoring model + sigmoid normalisation
+|-- reporting.py     # Native JSON and SARIF 2.1.0 serialization
+|-- data/
+|   `-- urls.txt     # Sample URLs for batch testing
+`-- README.md
 ```
 
 ## Contributing
