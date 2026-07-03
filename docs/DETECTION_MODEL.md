@@ -23,7 +23,16 @@ as the measured probability that a target is malicious.
 - Phishing-related words
 - Digit and special-character density
 - Hostname entropy
+- Reserved opaque hostname labels: long, compact, alphanumeric labels with
+  moderate entropy and no separators in `.example` public-safe fixtures
 - Punycode labels and Unicode hostname presence
+
+Reserved opaque hostname labels are treated as a regression-fixture signal
+because some public-data phishing samples use brandless generated-looking
+hostnames after live infrastructure has been neutralized to `.example` for safe
+testing. The feature excludes short labels, non-`.example` hosts, multi-label
+hosts, hyphenated labels, Unicode labels, and punycode labels so it does not
+penalize ordinary long production domains.
 
 IDN indicators are contextual signals with deliberately modest weights.
 Internationalized domains are legitimate and are not classified as phishing
