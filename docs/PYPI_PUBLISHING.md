@@ -41,7 +41,9 @@ Benefits:
 The release workflow is prepared for Trusted Publishing:
 
 - tagged releases build and validate the wheel and source distribution;
-- build artifacts are uploaded for the publish job;
+- build artifacts are uploaded for GitHub Releases;
+- a separate PyPI artifact includes only `*.whl` and `*.tar.gz` files so
+  `SHA256SUMS` is not passed to the PyPI upload action;
 - the `publish-pypi` job runs only for `v*` tags;
 - the publish job uses the protected `pypi` environment;
 - publishing uses OpenID Connect (`id-token: write`) instead of a stored PyPI
