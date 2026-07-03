@@ -1,0 +1,52 @@
+name: Adoption or showcase report
+description: Share a safe public workflow, usage example, or integration result
+title: "adoption: "
+labels: ["adoption", "documentation"]
+body:
+  - type: input
+    attributes:
+      label: Public link
+      description: Link to the repository, workflow, article, or public result.
+      placeholder: https://github.com/example/repo/actions/workflows/phishguard.yml
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: PhishGuard version
+      placeholder: v0.5.1
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Integration type
+      options:
+        - GitHub Action
+        - CLI
+        - Python API
+        - SARIF / Code Scanning
+        - JSON output
+        - Documentation or article
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: What did you test?
+      description: Use safe fixtures, reserved domains, or your own URLs only.
+      placeholder: Describe the workflow and the result without private data.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Feedback
+      description: What worked, what was confusing, and what would improve adoption?
+    validations:
+      required: false
+  - type: checkboxes
+    attributes:
+      label: Safety and listing permission
+      options:
+        - label: I removed credentials, private email, personal data, and active malicious payloads.
+          required: true
+        - label: This example may be listed publicly if maintainers accept it as useful evidence.
+          required: false
