@@ -150,6 +150,8 @@ Use the stable Marketplace release to scan a URL in CI:
 See the
 [GitHub Marketplace listing](https://github.com/marketplace/actions/phishguard-ai-phishing-detector)
 for available inputs and version selection.
+Teams testing PhishGuard in their own repositories can follow the
+[adoption and showcase guide](docs/ADOPTION.md).
 
 For development, install from a clone:
 
