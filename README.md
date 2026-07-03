@@ -164,6 +164,10 @@ python -m unittest discover -s tests -v
 Installation provides a `phishguard` command. Running the source file directly
 remains supported for development.
 
+Python callers can also embed the supported API directly. See the
+[Python API guide](docs/PYTHON_API.md) for `score_url`, `score_email`, and
+`classify` examples.
+
 ## Usage
 
 ```bash
