@@ -84,6 +84,8 @@ The release also includes a source archive, `SHA256SUMS`, and signed build
 provenance. See the
 [v0.5.1 release](https://github.com/omobolajiadeyan/phishguard-ai/releases/tag/v0.5.1)
 for downloads and verification details.
+Windows users can follow the copy-paste
+[Windows install verification guide](docs/WINDOWS_INSTALL.md).
 
 ## GitHub Action
 
