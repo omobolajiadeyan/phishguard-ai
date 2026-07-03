@@ -66,6 +66,8 @@ without using live phishing infrastructure.
 See [Project Evidence](docs/PROJECT_EVIDENCE.md) for dated benchmark results,
 release and contribution evidence, a reproducible demonstration, and explicit
 limits on what the current metrics establish.
+See [Public Evidence and Adoption](docs/PUBLIC_EVIDENCE.md) for the current
+Marketplace, release, benchmark, and contributor evidence narrative.
 [Watch the 18-second safe demo video](https://github.com/omobolajiadeyan/phishguard-ai/releases/download/v0.4.0/phishguard-demo.mp4).
 
 ## Installation
