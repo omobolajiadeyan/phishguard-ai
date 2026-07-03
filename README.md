@@ -97,6 +97,8 @@ without using live phishing infrastructure.
 See [Project Evidence](docs/PROJECT_EVIDENCE.md) for dated benchmark results,
 release and contribution evidence, a reproducible demonstration, and explicit
 limits on what the current metrics establish.
+See [Public Evidence and Adoption](docs/PUBLIC_EVIDENCE.md) for the current
+Marketplace, release, benchmark, and contributor evidence narrative.
 [Watch the 18-second safe demo video](https://github.com/omobolajiadeyan/phishguard-ai/releases/download/v0.4.0/phishguard-demo.mp4).
 
 ## Installation
@@ -113,6 +115,8 @@ The release also includes a source archive, `SHA256SUMS`, and signed build
 provenance. See the
 [v0.5.1 release](https://github.com/omobolajiadeyan/phishguard-ai/releases/tag/v0.5.1)
 for downloads and verification details.
+Windows users can follow the copy-paste
+[Windows install verification guide](docs/WINDOWS_INSTALL.md).
 
 ## Quick Scan
 
@@ -213,7 +217,8 @@ The command reports ordered predictions, confusion-matrix counts, precision,
 recall, and false-positive rate. These are fixture metrics for detecting
 regressions, not population-level accuracy or calibration estimates. See the
 [benchmark documentation](docs/BENCHMARK.md) for the synthetic fixture, the
-licensed URL-Phish-derived slice, sanitization, and reporting rules.
+licensed URL-Phish-derived slice, safe-case contribution guidance,
+sanitization, and reporting rules.
 
 ## Example Output
 
