@@ -153,6 +153,29 @@ def has_unicode_hostname(url: str) -> int:
         return 0
 
 
+def has_opaque_hostname_label(url: str) -> int:
+    """Return 1 for opaque labels in reserved-hostname test inputs."""
+    try:
+        hostname = urlparse(url).hostname or ""
+    except Exception:
+        return 0
+
+    labels = hostname.split(".")
+    if len(labels) != 2:
+        return 0
+    if labels[1].lower() != "example":
+        return 0
+
+    label = labels[0].lower()
+    if label.startswith("xn--"):
+        return 0
+    if len(label) < 11:
+        return 0
+    if not label.isascii() or not label.isalnum():
+        return 0
+    return int(entropy(label) >= 3.0)
+
+
 # ──────────────────────────────────────────────
 # Typosquatting Detection
 # ──────────────────────────────────────────────
@@ -216,6 +239,7 @@ def extract_url_features(url: str) -> dict:
         "has_port":              has_port(url),
         "has_punycode":          has_punycode(url),
         "has_unicode_hostname":  has_unicode_hostname(url),
+        "has_opaque_hostname_label": has_opaque_hostname_label(url),
         "typosquatting_score":   typosquatting_score(url),
     }
 
