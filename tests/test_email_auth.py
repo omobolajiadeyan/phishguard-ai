@@ -7,6 +7,44 @@ from email_auth import (
 
 
 class AuthenticationResultsParserTests(unittest.TestCase):
+    def test_parses_supported_result_matrix(self):
+        cases = (
+            (
+                "none values",
+                "mx.example; spf=none; dkim=none; dmarc=none",
+                {"spf": "none", "dkim": "none", "dmarc": "none"},
+            ),
+            (
+                "mixed spaces and tabs",
+                "mx.example;\tspf\t=\tpass ; dkim = fail;\tdmarc = neutral",
+                {"spf": "pass", "dkim": "fail", "dmarc": "neutral"},
+            ),
+            (
+                "different method order",
+                "mx.example; dmarc=fail; dkim=pass; spf=softfail",
+                {"spf": "softfail", "dkim": "pass", "dmarc": "fail"},
+            ),
+            (
+                "unrelated methods ignored",
+                "mx.example; arc=pass; spf=pass; bimi=pass; dkim=pass; dmarc=pass",
+                {"spf": "pass", "dkim": "pass", "dmarc": "pass"},
+            ),
+            (
+                "unsupported values remain unknown",
+                "mx.example; spf=temperror; dkim=permerror; dmarc=bestguesspass",
+                {"spf": "unknown", "dkim": "unknown", "dmarc": "unknown"},
+            ),
+            (
+                "unsupported value does not block other methods",
+                "mx.example; spf=pass; dkim=policy; dmarc=fail; arc=pass",
+                {"spf": "pass", "dkim": "unknown", "dmarc": "fail"},
+            ),
+        )
+
+        for name, header, expected in cases:
+            with self.subTest(name=name):
+                self.assertEqual(parse_authentication_results(header), expected)
+
     def test_parses_case_insensitive_pass_results(self):
         results = parse_authentication_results(
             "mx.example; SPF=PASS smtp.mailfrom=example.com; "
