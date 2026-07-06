@@ -11,6 +11,7 @@ import http.client
 import ssl
 import urllib.parse
 
+from psl import registrable_domain
 
 _USER_AGENT = "PhishGuard-AI/0.5 redirect-tracer (+https://github.com/omobolajiadeyan/phishguard-ai)"
 _REDIRECT_CODES = frozenset({301, 302, 303, 307, 308})
@@ -21,6 +22,16 @@ def _domain(url: str) -> str:
         return (urllib.parse.urlparse(url).hostname or "").lower()
     except Exception:
         return ""
+
+
+def _registrable_domain(url: str) -> str:
+    """eTLD+1 for *url*, e.g. "login.example.com" -> "example.com".
+
+    Used for cross-domain redirect comparison so that same-organization
+    subdomain redirects (www -> login) are not flagged merely for having
+    different hostnames. See docs/DETECTION_MODEL.md and issue #29.
+    """
+    return registrable_domain(_domain(url))
 
 
 def _head(url: str, timeout: int) -> tuple[int, str | None]:
@@ -75,7 +86,7 @@ def follow_redirects(
     error           : human-readable error string, or None on clean completion
     """
     chain: list[str] = [url]
-    origin = _domain(url)
+    origin = _registrable_domain(url)
     crossed = False
     error: str | None = None
     current = url
@@ -95,7 +106,7 @@ def follow_redirects(
             break
 
         next_url = urllib.parse.urljoin(current, location)
-        if _domain(next_url) != origin:
+        if _registrable_domain(next_url) != origin:
             crossed = True
 
         chain.append(next_url)
