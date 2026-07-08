@@ -8,6 +8,7 @@ result dict so the caller can decide whether to surface it or continue silently.
 from __future__ import annotations
 
 import http.client
+import ipaddress
 import ssl
 import urllib.parse
 
@@ -31,7 +32,12 @@ def _registrable_domain(url: str) -> str:
     subdomain redirects (www -> login) are not flagged merely for having
     different hostnames. See docs/DETECTION_MODEL.md and issue #29.
     """
-    return registrable_domain(_domain(url))
+    hostname = _domain(url)
+    try:
+        ipaddress.ip_address(hostname)
+    except ValueError:
+        return registrable_domain(hostname)
+    return hostname
 
 
 def _head(url: str, timeout: int) -> tuple[int, str | None]:

@@ -67,6 +67,12 @@ class RegistrableDomainTests(unittest.TestCase):
         self.assertEqual(registrable_domain("foo.ck"), "foo.ck")
         self.assertEqual(registrable_domain("bar.foo.ck"), "bar.foo.ck")
 
+    def test_unknown_tld_uses_implicit_wildcard_rule(self):
+        self.assertEqual(
+            registrable_domain("login.example.unknownlocal"),
+            "example.unknownlocal",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

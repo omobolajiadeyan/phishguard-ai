@@ -14,8 +14,12 @@ unmatched hostname falls back to the implicit "*" rule (its last label).
 from __future__ import annotations
 
 import pathlib
+import sysconfig
 
 _DATA_PATH = pathlib.Path(__file__).parent / "data" / "public_suffix_list.dat"
+_INSTALLED_DATA_PATH = (
+    pathlib.Path(sysconfig.get_path("data")) / "data" / "public_suffix_list.dat"
+)
 
 
 def _load_rules(path: pathlib.Path) -> tuple[set[str], set[str], set[str]]:
@@ -45,7 +49,9 @@ def _load_rules(path: pathlib.Path) -> tuple[set[str], set[str], set[str]]:
     return normal, wildcard_bases, exceptions
 
 
-_NORMAL, _WILDCARD_BASES, _EXCEPTIONS = _load_rules(_DATA_PATH)
+_NORMAL, _WILDCARD_BASES, _EXCEPTIONS = _load_rules(
+    _DATA_PATH if _DATA_PATH.exists() else _INSTALLED_DATA_PATH
+)
 
 
 def _public_suffix_length(labels: list[str]) -> int:
