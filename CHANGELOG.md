@@ -2,6 +2,18 @@
 
 All notable changes to PhishGuard AI are documented here.
 
+## [Unreleased]
+
+### Fixed
+
+- **Redirect cross-domain comparison now uses the registrable domain
+  (eTLD+1), not the raw hostname** (issue #29). Same-organization subdomain
+  redirects (e.g. `www.example.com` -> `login.example.com`) no longer set
+  `redirect_crossed_domain`. Added `psl.py`, a minimal parser for a bundled
+  copy of the Mozilla Public Suffix List (`data/public_suffix_list.dat`),
+  keeping the zero-runtime-dependency promise instead of adding `tldextract`.
+  See `docs/DETECTION_MODEL.md` for the before/after regression example.
+
 ## [0.5.1] - 2026-06-12
 
 ### Added

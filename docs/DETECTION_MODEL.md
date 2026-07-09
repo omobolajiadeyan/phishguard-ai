@@ -75,6 +75,39 @@ These examples demonstrate expected model behavior, not population-level
 accuracy. Forwarding and mailing lists can legitimately break SPF or DKIM, so
 authentication failures remain modest supporting signals.
 
+## Redirect Cross-Domain Comparison (eTLD+1)
+
+`--follow-redirects` flags a chain as `redirect_crossed_domain` when a hop
+leaves the origin's registrable domain. Comparing raw hostnames instead of
+the registrable domain (eTLD+1) caused false positives on ordinary
+same-organization subdomain redirects, since `www.example.com` and
+`login.example.com` are different hostnames but the same registrable domain
+(tracked as [issue #29](https://github.com/omobolajiadeyan/phishguard-ai/issues/29)).
+
+The fix bundles the Mozilla Public Suffix List
+(`data/public_suffix_list.dat`, refreshed via
+`tools/update_public_suffix_list.py`) and parses it in `psl.py`, rather than
+adding `tldextract` as a dependency. `redirect.py` now compares
+`psl.registrable_domain(hostname)` instead of the raw hostname. This also
+keeps private-section entries correct: `alice.github.io` and
+`bob.github.io` are still treated as different registrable domains, since
+GitHub Pages subdomains are independently registrable.
+
+Before/after, using `model.score_url` on a same-organization redirect from
+`https://www.example.com/` to `https://login.example.com/verify`
+(reserved documentation domain, `redirect_hops=1`):
+
+| | `redirect_crossed_domain` | Score | Verdict |
+| --- | --- | --- | --- |
+| Before fix (hostname compare) | `1` (incorrect) | `0.8670` | `PHISHING` |
+| After fix (eTLD+1 compare) | `0` (correct) | `0.5621` | `SUSPICIOUS` |
+
+The remaining `SUSPICIOUS` verdict after the fix comes from unrelated
+features on this URL (phishing-keyword density from `login`/`verify`), not
+from the redirect signal — confirming the fix removed exactly the intended
+false-positive contribution rather than masking other signals. Regression
+coverage: `tests/test_psl.py`.
+
 ## Change Standard
 
 A detection change should include:
