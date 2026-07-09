@@ -289,7 +289,7 @@ researchers, and first-time open-source contributors.
 ## Author
 
 **Omobolaji Adeyan** - Cybersecurity Engineer
-[GitHub](https://github.com/omobolajiadeyan)
+[GitHub](https://github.com/omobolajiadeyan) · [Website](https://omobolajiadeyan.com)
 
 ## License and Citation
 
