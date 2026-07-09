@@ -286,6 +286,8 @@ researchers, and first-time open-source contributors.
 - **LinkedIn:** [linkedin.com/in/oeadeyan](https://www.linkedin.com/in/oeadeyan)
 - **Security contact:** [omobolaji.adeyan@gmail.com](mailto:omobolaji.adeyan@gmail.com)
 
+A [FreNiMi](https://frenimi.com) product.
+
 ## Author
 
 **Omobolaji Adeyan** - Cybersecurity Engineer
