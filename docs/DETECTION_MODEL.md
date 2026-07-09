@@ -70,10 +70,18 @@ For the checked-in regression examples:
 | --- | --- | --- |
 | Forwarded legitimate message (`spf=fail`, `dkim=pass`, `dmarc=pass`) | `0.3149 SAFE` | `0.3595 SAFE` |
 | Synthetic lure (`spf=fail`, `dkim=fail`, `dmarc=fail`) | `0.6525 SUSPICIOUS` | `0.8220 PHISHING` |
+| Authenticated malicious sender (`spf=pass`, `dkim=pass`, `dmarc=pass`) | `0.9583 PHISHING` | `0.9583 PHISHING` (unchanged) |
+| Malformed `Authentication-Results` value | `0.9583 PHISHING` | `0.9583 PHISHING` (parses to `unknown`, same as omitting the header) |
+| Mild message with a lone DMARC failure (`spf=pass`, `dkim=pass`, `dmarc=fail`) | `0.3143 SAFE` | `0.4182 SAFE` (raised but not decisive) |
 
 These examples demonstrate expected model behavior, not population-level
 accuracy. Forwarding and mailing lists can legitimately break SPF or DKIM, so
-authentication failures remain modest supporting signals.
+authentication failures remain modest supporting signals. The authenticated-sender
+and malformed-header rows are the flip side of that same design: passing,
+missing, or malformed authentication never *lowers* a score either — a
+properly authenticated phishing email (e.g. from a compromised mailbox or an
+attacker's own correctly configured domain) is scored purely on its content.
+Authentication-Results is supporting evidence in one direction only.
 
 ## Redirect Cross-Domain Comparison (eTLD+1)
 
