@@ -95,6 +95,75 @@ class EmailScoringTests(unittest.TestCase):
         self.assertEqual(classify(authenticated), "PHISHING")
         self.assertEqual(features["dmarc_result"], "fail")
 
+    def test_authenticated_sender_can_still_be_phishing(self):
+        # A fully SPF/DKIM/DMARC-passing sender (e.g. a compromised mailbox
+        # or an attacker's own properly configured domain) must not have
+        # its phishing score reduced by passing authentication. Passing
+        # auth proves message-transport authenticity, not sender intent.
+        subject = "URGENT: Account suspended"
+        body = (
+            "Click here immediately to verify your account or it will "
+            "expire! See attachment."
+        )
+        baseline, _ = score_email(subject, body)
+        authenticated, features = score_email(
+            subject, body, "mx.example; spf=pass; dkim=pass; dmarc=pass"
+        )
+
+        self.assertEqual(authenticated, baseline)
+        self.assertEqual(classify(authenticated), "PHISHING")
+        self.assertEqual(
+            (features["spf_result"], features["dkim_result"], features["dmarc_result"]),
+            ("pass", "pass", "pass"),
+        )
+
+    def test_missing_authentication_header_matches_explicit_none(self):
+        subject = "Weekly newsletter"
+        body = "Here are this week's top stories from our editorial team."
+
+        omitted, _ = score_email(subject, body)
+        explicit_none, features = score_email(subject, body, None)
+
+        self.assertEqual(omitted, explicit_none)
+        self.assertEqual(
+            (features["spf_result"], features["dkim_result"], features["dmarc_result"]),
+            ("unknown", "unknown", "unknown"),
+        )
+
+    def test_malformed_authentication_results_degrades_to_no_header(self):
+        subject = "URGENT: Account suspended"
+        body = (
+            "Click here immediately to verify your account or it will "
+            "expire! See attachment."
+        )
+        baseline, _ = score_email(subject, body)
+        malformed, features = score_email(
+            subject, body, "totally not a valid header ;;; ==="
+        )
+
+        self.assertEqual(malformed, baseline)
+        self.assertEqual(
+            (features["spf_result"], features["dkim_result"], features["dmarc_result"]),
+            ("unknown", "unknown", "unknown"),
+        )
+
+    def test_single_authentication_failure_is_proportional_not_decisive(self):
+        # A lone DMARC failure (the heaviest-weighted auth signal, 0.18) on
+        # an otherwise mild email should nudge the score up without being
+        # enough on its own to flip a SAFE email to PHISHING.
+        subject = "Weekly newsletter"
+        body = "Here are this week's top stories from our editorial team."
+
+        baseline, _ = score_email(subject, body)
+        dmarc_fail_only, features = score_email(
+            subject, body, "mx.example; spf=pass; dkim=pass; dmarc=fail"
+        )
+
+        self.assertGreater(dmarc_fail_only, baseline)
+        self.assertEqual(classify(baseline), "SAFE")
+        self.assertEqual(classify(dmarc_fail_only), "SAFE")
+        self.assertEqual(features["dmarc_result"], "fail")
+
 
 if __name__ == "__main__":
     unittest.main()
