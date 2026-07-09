@@ -48,4 +48,7 @@ Security = "https://github.com/omobolajiadeyan/phishguard-ai/security/policy"
 phishguard = "phishguard:main"
 
 [tool.setuptools]
-py-modules = ["email_auth", "features", "model", "phishguard", "redirect", "reporting"]
+py-modules = ["email_auth", "features", "model", "phishguard", "psl", "redirect", "reporting"]
+
+[tool.setuptools.data-files]
+"data" = ["data/public_suffix_list.dat"]
