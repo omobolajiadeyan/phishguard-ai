@@ -91,6 +91,11 @@ It does not independently query DNS, validate SPF policy, verify a DKIM
 signature, or evaluate DMARC alignment. Only pass a header produced by a
 receiver you trust.
 
+The `eml` command therefore ignores embedded `Authentication-Results` by
+default. Use `--trusted-authserv-id mx.example` only when the receiving system
+prevents untrusted messages from preserving or prepending a forged header with
+that same authserv-id.
+
 Authentication failures are supporting evidence, not proof of phishing.
 Pass results do not reduce the risk score because authenticated infrastructure
 can still deliver malicious content. Missing, malformed, and unsupported

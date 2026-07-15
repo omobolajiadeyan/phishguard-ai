@@ -185,6 +185,11 @@ phishguard email \
   --body "Click here immediately to verify your account or it will be deleted." \
   --authentication-results "mx.example; spf=fail; dkim=fail; dmarc=fail"
 
+# Analyze a saved message using authentication evidence from one trusted receiver
+phishguard eml suspicious.eml \
+  --trusted-authserv-id mx.example \
+  --verbose
+
 # Batch scan a list of URLs
 phishguard batch data/urls.txt
 

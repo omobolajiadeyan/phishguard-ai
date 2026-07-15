@@ -3,10 +3,46 @@ import unittest
 from email_auth import (
     extract_authentication_features,
     parse_authentication_results,
+    select_trusted_authentication_results,
+    validate_authserv_id,
 )
 
 
 class AuthenticationResultsParserTests(unittest.TestCase):
+    def test_selects_first_exact_trusted_authserv_id_match(self):
+        headers = [
+            "attacker.example; spf=fail; dkim=fail; dmarc=fail",
+            "mx.example; spf=pass; dkim=pass; dmarc=pass",
+            "mx.example; spf=fail; dkim=fail; dmarc=fail",
+        ]
+
+        selected = select_trusted_authentication_results(headers, "MX.EXAMPLE")
+
+        self.assertEqual(selected, headers[1])
+
+    def test_does_not_accept_authserv_id_prefix_match(self):
+        headers = [
+            "mx.example.attacker; spf=pass; dkim=pass; dmarc=pass",
+        ]
+
+        selected = select_trusted_authentication_results(headers, "mx.example")
+
+        self.assertIsNone(selected)
+
+    def test_does_not_select_header_without_explicit_trust(self):
+        selected = select_trusted_authentication_results(
+            ["mx.example; spf=pass; dkim=pass; dmarc=pass"],
+            None,
+        )
+
+        self.assertIsNone(selected)
+
+    def test_rejects_unsafe_authserv_id(self):
+        for value in ("", "   ", "mx.example; spf=pass", "mx example"):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    validate_authserv_id(value)
+
     def test_parses_supported_result_matrix(self):
         cases = (
             (

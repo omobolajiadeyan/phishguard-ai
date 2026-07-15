@@ -56,6 +56,19 @@ Important boundary:
 - failures are not automatic proof of phishing;
 - callers must provide the final trusted receiver's header value.
 
+For a saved message, name the receiver that produced the trusted result:
+
+```bash
+phishguard eml suspicious.eml \
+  --trusted-authserv-id mx.example \
+  --verbose
+```
+
+Without the option, embedded authentication headers are ignored. Matching is
+exact and case-insensitive; it does not establish provenance by itself. The
+receiving system must strip or neutralize forged headers that claim its own
+authserv-id.
+
 ## 4. Security Education Demo
 
 Because PhishGuard uses reserved domains and synthetic examples, it can be used
