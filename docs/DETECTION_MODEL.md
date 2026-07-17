@@ -64,6 +64,13 @@ attacker-supplied `Authentication-Results` values are not independently
 trustworthy, and PhishGuard does not validate cryptographic signatures or DNS
 policy itself.
 
+For saved messages, `phishguard eml` ignores every embedded
+`Authentication-Results` header by default. Set `--trusted-authserv-id` to use
+the first header whose leading authserv-id is an exact, case-insensitive match.
+Prefix lookalikes are rejected. This selection is not cryptographic proof: the
+trusted receiving system must prevent untrusted messages from preserving or
+prepending a forged header with its own authserv-id.
+
 For the checked-in regression examples:
 
 | Example | Content only | With authentication results |

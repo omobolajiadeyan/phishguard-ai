@@ -1,5 +1,6 @@
 """Tests for the .eml file parsing command."""
 
+import json
 import subprocess
 import sys
 import tempfile
@@ -60,6 +61,64 @@ def _run_eml(eml_path: str, *extra_args: str) -> subprocess.CompletedProcess:
 
 
 class EmlCommandTests(unittest.TestCase):
+    def test_embedded_authentication_results_are_ignored_by_default(self):
+        with tempfile.TemporaryDirectory() as td:
+            eml_path = _write_eml(SAFE_EML, td)
+            out_path = Path(td) / "result.json"
+            result = _run_eml(eml_path, "--output", str(out_path))
+            payload = json.loads(out_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(payload["features"]["spf_result"], "unknown")
+        self.assertEqual(payload["features"]["dkim_result"], "unknown")
+        self.assertEqual(payload["features"]["dmarc_result"], "unknown")
+        self.assertFalse(payload["authentication_evidence"]["matched"])
+        self.assertIn("embedded Authentication-Results ignored", result.stdout)
+
+    def test_exact_trusted_authserv_id_enables_authentication_evidence(self):
+        with tempfile.TemporaryDirectory() as td:
+            eml_path = _write_eml(SAFE_EML, td)
+            out_path = Path(td) / "result.json"
+            result = _run_eml(
+                eml_path,
+                "--trusted-authserv-id",
+                "mx.company.com",
+                "--output",
+                str(out_path),
+            )
+            payload = json.loads(out_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(payload["features"]["spf_result"], "pass")
+        self.assertEqual(payload["features"]["dkim_result"], "pass")
+        self.assertEqual(payload["features"]["dmarc_result"], "pass")
+        self.assertTrue(payload["authentication_evidence"]["matched"])
+        self.assertIn("using trusted Authentication-Results evidence", result.stdout)
+        self.assertNotIn("mx.company.com", result.stdout)
+
+    def test_lookalike_authserv_id_is_not_trusted(self):
+        lookalike_eml = SAFE_EML.replace(
+            "mx.company.com;",
+            "mx.company.com.attacker;",
+        )
+        with tempfile.TemporaryDirectory() as td:
+            eml_path = _write_eml(lookalike_eml, td)
+            out_path = Path(td) / "result.json"
+            result = _run_eml(
+                eml_path,
+                "--trusted-authserv-id",
+                "mx.company.com",
+                "--output",
+                str(out_path),
+            )
+            payload = json.loads(out_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(payload["features"]["dmarc_result"], "unknown")
+        self.assertFalse(payload["authentication_evidence"]["matched"])
+        self.assertIn("no exact trusted authserv-id match", result.stdout)
+        self.assertNotIn("mx.company.com", result.stdout)
+
     def test_safe_eml_returns_exit_zero(self):
         with tempfile.TemporaryDirectory() as td:
             path = _write_eml(SAFE_EML, td)
@@ -107,7 +166,6 @@ class EmlCommandTests(unittest.TestCase):
         self.assertIn("Feature breakdown:", result.stdout)
 
     def test_eml_output_saved_to_json(self):
-        import json
         with tempfile.TemporaryDirectory() as td:
             eml_path = _write_eml(SAFE_EML, td)
             out_path = Path(td) / "result.json"

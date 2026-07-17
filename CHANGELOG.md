@@ -6,6 +6,11 @@ All notable changes to PhishGuard AI are documented here.
 
 ### Fixed
 
+- **Saved-email analysis no longer trusts embedded authentication results by
+  default.** The `eml` command ignores `Authentication-Results` unless
+  `--trusted-authserv-id` is configured, and then accepts only an exact
+  authserv-id match. Reports record the number of embedded headers and whether
+  trusted evidence matched.
 - **Redirect cross-domain comparison now uses the registrable domain
   (eTLD+1), not the raw hostname** (issue #29). Same-organization subdomain
   redirects (e.g. `www.example.com` -> `login.example.com`) no longer set
@@ -50,9 +55,9 @@ All notable changes to PhishGuard AI are documented here.
   distance-2 matches score 0.6. Exact legitimate domain matches are excluded
   from scoring.
 - **`.eml` file analysis** (`phishguard eml <file>`): parse RFC 5322 email
-  files using the Python standard library `email` module. Extracts subject,
-  body, and `Authentication-Results` header automatically, then runs both
-  email scoring and a URL scan of every link found in the body.
+  files using the Python standard library `email` module. Extracts subject and
+  body, then runs both email scoring and a URL scan of every link found in the
+  body. Authentication evidence requires an explicitly trusted receiver.
 - **Reusable GitHub Action** (`action.yml`): any repository can use
   `omobolajiadeyan/phishguard-ai@main` in a workflow to scan URLs and upload
   SARIF findings to GitHub Code Scanning.

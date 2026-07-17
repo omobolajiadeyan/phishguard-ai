@@ -20,7 +20,8 @@ tracked in GitHub issues so contributors can discuss and claim scoped tasks.
 - **Typosquatting detection** — pure-Python Levenshtein distance against 50
   well-known brand domains catches `paypa1.com`, `g00gle.com`, `githab.com`
 - **`.eml` file analysis** — parse full RFC 5322 email files, extract auth
-  headers automatically, and scan all embedded URLs in one command
+  evidence from an explicitly trusted receiver, and scan all embedded URLs in
+  one command
 - **Reusable GitHub Action** — `uses: omobolajiadeyan/phishguard-ai@v0.5.1` lets
   any repo integrate phishing URL scanning into their CI pipeline
 - SARIF 2.1.0 output for GitHub Code Scanning and CI security pipelines
