@@ -77,7 +77,7 @@ validated as a statistically trained model.
 
 ## Features
 
-- Real-time URL and email scoring with probability output
+- Real-time URL and email analysis with an explainable heuristic risk score
 - Batch scan a list of URLs from a file
 - Explainable results - see which features triggered the alert
 - Three verdict levels: `SAFE`, `SUSPICIOUS`, `PHISHING`
@@ -235,7 +235,7 @@ sanitization, and reporting rules.
 
 ```
   PHISHGUARD AI
-  AI-powered phishing detection
+  Explainable phishing detection
 
 ------------------------------------------------------------
   URL     : http://paypa1-secure-login.xyz/verify
