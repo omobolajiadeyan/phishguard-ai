@@ -17,6 +17,7 @@ from email_auth import (
 from model import score_url, score_email, classify, THRESHOLD
 from redirect import follow_redirects
 from reporting import write_report
+from server import run_server
 
 
 def configure_output() -> None:
@@ -364,6 +365,7 @@ Examples:
   python phishguard.py eml suspicious.eml --verbose
   python phishguard.py batch data/urls.txt
   python phishguard.py batch data/urls.txt --output results.sarif --format sarif
+  python phishguard.py serve --port 8765
         """,
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -407,7 +409,22 @@ Examples:
     add_output_arguments(batch_parser)
     add_redirect_argument(batch_parser)
 
+    # Serve command
+    serve_parser = subparsers.add_parser(
+        "serve", help="Run a local REST API server for URL and email scoring"
+    )
+    serve_parser.add_argument(
+        "--host", default="127.0.0.1", help="Host to bind (default: 127.0.0.1)"
+    )
+    serve_parser.add_argument(
+        "--port", type=int, default=8765, help="Port to bind (default: 8765)"
+    )
+
     args = parser.parse_args()
+
+    if args.command == "serve":
+        run_server(args.host, args.port)
+        return
 
     if args.format == "sarif" and not args.output:
         parser.error("--format sarif requires --output")

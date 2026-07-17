@@ -215,6 +215,35 @@ education demos, email-authentication experiments, and benchmark work.
 See the [detection model documentation](docs/DETECTION_MODEL.md) for feature
 semantics, limitations, and the evidence required for scoring changes.
 
+## REST API Server
+
+For SIEM and proxy integrations that want a long-running scoring endpoint
+instead of shelling out to the CLI per lookup, run PhishGuard AI as a local
+HTTP server. It uses only the Python standard library — no new dependencies.
+
+```bash
+phishguard serve --port 8765
+```
+
+```bash
+# Health check
+curl http://127.0.0.1:8765/healthz
+
+# Score a URL (add "follow_redirects": N to resolve short links first)
+curl -X POST http://127.0.0.1:8765/v1/url \
+  -H "Content-Type: application/json" \
+  -d '{"url": "http://paypa1-secure-login.xyz/verify"}'
+
+# Score an email
+curl -X POST http://127.0.0.1:8765/v1/email \
+  -H "Content-Type: application/json" \
+  -d '{"subject": "URGENT: verify your account", "body": "Click here now", "authentication_results": "mx.example; spf=fail; dkim=fail; dmarc=fail"}'
+```
+
+The server binds to `127.0.0.1` by default and has no authentication of its
+own — only pass `--host` to expose it more broadly if you put it behind your
+own network controls and authentication.
+
 ## Reproducible Benchmark
 
 Run the public-safe URL regression fixture with:

@@ -4,6 +4,15 @@ All notable changes to PhishGuard AI are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **`phishguard serve` REST API mode** for SIEM and proxy integrations that
+  want a long-running scoring endpoint instead of shelling out to the CLI per
+  lookup. Built on the standard-library `http.server`, so it adds no runtime
+  dependencies. Exposes `GET /healthz`, `POST /v1/url` (with optional
+  `follow_redirects`), and `POST /v1/email`. Binds to `127.0.0.1` by default;
+  see the README's REST API Server section for the security note on `--host`.
+
 ### Fixed
 
 - **Saved-email analysis no longer trusts embedded authentication results by
