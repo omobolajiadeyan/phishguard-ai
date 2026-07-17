@@ -8,7 +8,7 @@ depend on a real port being free.
 import unittest
 from unittest.mock import patch
 
-from redirect import _assert_public_host, _domain, _head, _registrable_domain, follow_redirects
+from redirect import _domain, _head, _is_public_host, _registrable_domain, follow_redirects
 
 _UNREACHABLE = "http://example.invalid:19999/unreachable"
 
@@ -79,7 +79,7 @@ class RedirectResultContractTests(unittest.TestCase):
 
     def test_credential_url_uses_hostname_not_netloc(self):
         """netloc includes userinfo; _head must connect to the real host only."""
-        with patch("redirect._assert_public_host"), patch(
+        with patch("redirect._is_public_host", return_value=True), patch(
             "redirect.http.client.HTTPConnection"
         ) as connection:
             response = connection.return_value.getresponse.return_value
@@ -108,25 +108,21 @@ class SsrfProtectionTests(unittest.TestCase):
     """
     The redirect tracer is reachable from an untrusted network caller via
     `phishguard serve`, so every hop's destination must be checked before
-    connecting. See _assert_public_host's docstring for the threat model.
+    connecting. See _is_public_host's docstring for the threat model.
     """
 
     def test_loopback_ip_literal_is_rejected(self):
-        with self.assertRaises(ValueError):
-            _assert_public_host("127.0.0.1", None, "http")
+        self.assertFalse(_is_public_host("127.0.0.1", None, "http"))
 
     def test_private_rfc1918_ip_literal_is_rejected(self):
-        with self.assertRaises(ValueError):
-            _assert_public_host("10.0.0.5", None, "http")
+        self.assertFalse(_is_public_host("10.0.0.5", None, "http"))
 
     def test_cloud_metadata_link_local_ip_is_rejected(self):
-        with self.assertRaises(ValueError):
-            _assert_public_host("169.254.169.254", None, "http")
+        self.assertFalse(_is_public_host("169.254.169.254", None, "http"))
 
     def test_localhost_hostname_is_rejected_without_dns_lookup(self):
         with patch("redirect.socket.getaddrinfo") as getaddrinfo:
-            with self.assertRaises(ValueError):
-                _assert_public_host("localhost", None, "http")
+            self.assertFalse(_is_public_host("localhost", None, "http"))
         getaddrinfo.assert_not_called()
 
     def test_hostname_resolving_to_a_private_address_is_rejected(self):
@@ -134,27 +130,25 @@ class SsrfProtectionTests(unittest.TestCase):
             "redirect.socket.getaddrinfo",
             return_value=[(2, 1, 6, "", ("10.1.2.3", 80))],
         ):
-            with self.assertRaises(ValueError):
-                _assert_public_host("internal.example", None, "http")
+            self.assertFalse(_is_public_host("internal.example", None, "http"))
 
     def test_unresolvable_hostname_is_rejected(self):
         with patch("redirect.socket.getaddrinfo", side_effect=OSError("no such host")):
-            with self.assertRaises(ValueError):
-                _assert_public_host("does-not-resolve.example", None, "http")
+            self.assertFalse(_is_public_host("does-not-resolve.example", None, "http"))
 
     def test_public_ip_literal_is_accepted(self):
         # 8.8.8.8 is a stable, well-known globally-routable address. Note
         # TEST-NET ranges like 192.0.2.0/24 (used elsewhere in this file for
         # string-handling tests) are *not* suitable here: Python's
         # ipaddress module correctly treats them as non-global/private.
-        _assert_public_host("8.8.8.8", None, "http")
+        self.assertTrue(_is_public_host("8.8.8.8", None, "http"))
 
     def test_hostname_resolving_to_a_public_address_is_accepted(self):
         with patch(
             "redirect.socket.getaddrinfo",
             return_value=[(2, 1, 6, "", ("8.8.8.8", 443))],
         ):
-            _assert_public_host("public.example", None, "https")
+            self.assertTrue(_is_public_host("public.example", None, "https"))
 
     def test_blocked_target_degrades_to_a_chain_error_not_a_crash(self):
         result = follow_redirects("http://127.0.0.1/admin", timeout=1)

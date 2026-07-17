@@ -35,35 +35,30 @@ def _is_blocked_ip(ip_str: str) -> bool:
     )
 
 
-def _assert_public_host(hostname: str, port: int | None, scheme: str) -> None:
-    """Reject hostnames that resolve to a private, loopback, or link-local
-    address (including the 169.254.169.254 cloud metadata endpoint).
+def _is_public_host(hostname: str, port: int | None, scheme: str) -> bool:
+    """True when *hostname* resolves only to public, routable addresses.
 
     The redirect tracer is reachable from an untrusted network caller via
     ``phishguard serve``, so every hop's destination — not just the URL a
     caller typed in directly — must be checked before connecting; otherwise
     a redirect chain could be used to make this process issue requests to
-    internal services on the caller's behalf (SSRF). This is a pre-flight
-    DNS check, not a guarantee against DNS rebinding between check and
+    internal services on the caller's behalf (SSRF), including the
+    169.254.169.254 cloud metadata endpoint. This is a pre-flight DNS
+    check, not a guarantee against DNS rebinding between check and
     connect; closing that narrow gap would require connecting to the
     resolved IP directly, which breaks Host-header/SNI-based routing for
     the (common) legitimate case of tracing real redirect chains.
     """
     if hostname.lower() in _BLOCKED_HOSTNAMES:
-        raise ValueError(f"Refusing to fetch internal host: {hostname}")
+        return False
 
     default_port = 443 if scheme == "https" else 80
     try:
         results = socket.getaddrinfo(hostname, port or default_port, proto=socket.IPPROTO_TCP)
-    except OSError as exc:
-        raise ValueError(f"Could not resolve host: {hostname}") from exc
+    except OSError:
+        return False
 
-    for _family, _kind, _proto, _canon, sockaddr in results:
-        if _is_blocked_ip(sockaddr[0]):
-            raise ValueError(
-                f"Refusing to fetch a redirect target that resolves to a "
-                f"private or internal address: {hostname}"
-            )
+    return not any(_is_blocked_ip(sockaddr[0]) for *_rest, sockaddr in results)
 
 
 def _domain(url: str) -> str:
@@ -105,7 +100,11 @@ def _head(url: str, timeout: int) -> tuple[int, str | None]:
     if parsed.query:
         path = f"{path}?{parsed.query}"
 
-    _assert_public_host(hostname, port, parsed.scheme)
+    if not _is_public_host(hostname, port, parsed.scheme):
+        raise ValueError(
+            f"Refusing to fetch a redirect target that resolves to a "
+            f"private or internal address: {hostname}"
+        )
 
     headers = {"User-Agent": _USER_AGENT, "Connection": "close"}
 
@@ -118,11 +117,7 @@ def _head(url: str, timeout: int) -> tuple[int, str | None]:
         conn = http.client.HTTPConnection(hostname, port=port, timeout=timeout)
 
     try:
-        # _assert_public_host() above already rejected private/loopback/
-        # link-local/reserved targets for this exact (hostname, port,
-        # scheme); CodeQL's SSRF query does not model that custom guard as
-        # a sanitizer, so the alert on this line is a known false positive.
-        conn.request("HEAD", path, headers=headers)  # codeql[py/full-ssrf]
+        conn.request("HEAD", path, headers=headers)
         resp = conn.getresponse()
         return resp.status, resp.getheader("Location")
     finally:
