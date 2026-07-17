@@ -118,7 +118,11 @@ def _head(url: str, timeout: int) -> tuple[int, str | None]:
         conn = http.client.HTTPConnection(hostname, port=port, timeout=timeout)
 
     try:
-        conn.request("HEAD", path, headers=headers)
+        # _assert_public_host() above already rejected private/loopback/
+        # link-local/reserved targets for this exact (hostname, port,
+        # scheme); CodeQL's SSRF query does not model that custom guard as
+        # a sanitizer, so the alert on this line is a known false positive.
+        conn.request("HEAD", path, headers=headers)  # codeql[py/full-ssrf]
         resp = conn.getresponse()
         return resp.status, resp.getheader("Location")
     finally:
