@@ -10,6 +10,10 @@ import email as _email_lib
 import email.policy
 import re
 import sys
+from email_auth import (
+    select_trusted_authentication_results,
+    validate_authserv_id,
+)
 from model import score_url, score_email, classify, THRESHOLD
 from redirect import follow_redirects
 from reporting import write_report
@@ -140,6 +144,7 @@ def analyze_eml(
     verbose: bool = False,
     plain: bool = False,
     follow_redirects_hops: int = 0,
+    trusted_authserv_id: str | None = None,
 ) -> dict:
     """Parse a .eml file and run email + embedded-URL analysis."""
     try:
@@ -153,8 +158,14 @@ def analyze_eml(
         sys.exit(1)
 
     subject = str(msg.get("Subject", "(no subject)"))
-    auth_header = msg.get("Authentication-Results", None)
-    auth_results = str(auth_header) if auth_header else None
+    auth_headers = [
+        str(value)
+        for value in msg.get_all("Authentication-Results", [])
+    ]
+    auth_results = select_trusted_authentication_results(
+        auth_headers,
+        trusted_authserv_id,
+    )
 
     # Prefer text/plain body; fall back to tag-stripped HTML.
     # For HTML parts, extract href/src URLs before stripping tags so links
@@ -191,6 +202,32 @@ def analyze_eml(
             body = ""
 
     print(style(f"\nSource  : {filepath}", CYAN, plain=plain))
+    if auth_headers and trusted_authserv_id is None:
+        print(
+            style(
+                "  Auth    : embedded Authentication-Results ignored; "
+                "set --trusted-authserv-id to use receiver evidence",
+                GRAY,
+                plain=plain,
+            )
+        )
+    elif trusted_authserv_id is not None and auth_results is None:
+        print(
+            style(
+                "  Auth    : no exact trusted authserv-id match; "
+                "authentication evidence ignored",
+                YELLOW,
+                plain=plain,
+            )
+        )
+    elif auth_results is not None:
+        print(
+            style(
+                "  Auth    : using trusted Authentication-Results evidence",
+                CYAN,
+                plain=plain,
+            )
+        )
     result = analyze_email(
         subject=subject,
         body=str(body),
@@ -199,6 +236,11 @@ def analyze_eml(
         plain=plain,
     )
     result["source"] = filepath
+    result["authentication_evidence"] = {
+        "embedded_header_count": len(auth_headers),
+        "trusted_authserv_id": trusted_authserv_id,
+        "matched": auth_results is not None,
+    }
 
     # Scan URLs found in the body and any extracted from HTML hrefs
     body_urls = extracted_urls + re.findall(r"https?://[^\s<>\"')\]]+", body)
@@ -347,6 +389,13 @@ Examples:
     # EML command
     eml_parser = subparsers.add_parser("eml", help="Analyze a .eml email file")
     eml_parser.add_argument("file", help="Path to the .eml file")
+    eml_parser.add_argument(
+        "--trusted-authserv-id",
+        help=(
+            "Use only an Authentication-Results header whose leading "
+            "authserv-id exactly matches this trusted receiver"
+        ),
+    )
     eml_parser.add_argument("--verbose", "-v", action="store_true")
     add_output_arguments(eml_parser)
     add_redirect_argument(eml_parser)
@@ -362,6 +411,12 @@ Examples:
 
     if args.format == "sarif" and not args.output:
         parser.error("--format sarif requires --output")
+
+    if args.command == "eml" and args.trusted_authserv_id is not None:
+        try:
+            validate_authserv_id(args.trusted_authserv_id)
+        except ValueError as exc:
+            parser.error(str(exc))
 
     print_banner(plain=args.plain)
 
@@ -394,6 +449,7 @@ Examples:
             verbose=args.verbose,
             plain=args.plain,
             follow_redirects_hops=args.follow_redirects,
+            trusted_authserv_id=args.trusted_authserv_id,
         )
         if args.output:
             write_report(result, args.output, args.format)

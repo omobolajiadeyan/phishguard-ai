@@ -98,6 +98,30 @@ class CliTests(unittest.TestCase):
             ],
         )
 
+    def test_eml_help_lists_trusted_authserv_id(self):
+        self.assert_help_contains(
+            ["eml", "--help"],
+            [
+                "file",
+                "--trusted-authserv-id",
+                "--verbose",
+                "--output",
+                "--format",
+                "--plain",
+            ],
+        )
+
+    def test_eml_rejects_unsafe_trusted_authserv_id(self):
+        result = self.run_cli(
+            "eml",
+            "message.eml",
+            "--trusted-authserv-id",
+            "mx.example; spf=pass",
+        )
+
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("trusted authserv-id must contain only", result.stderr)
+
     def test_batch_help_lists_file_and_output_options(self):
         self.assert_help_contains(
             ["batch", "--help"],
