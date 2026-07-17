@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import http.client
 import ipaddress
+import socket
 import ssl
 import urllib.parse
 
@@ -16,6 +17,53 @@ from psl import registrable_domain
 
 _USER_AGENT = "PhishGuard-AI/0.5 redirect-tracer (+https://github.com/omobolajiadeyan/phishguard-ai)"
 _REDIRECT_CODES = frozenset({301, 302, 303, 307, 308})
+_BLOCKED_HOSTNAMES = frozenset({"localhost"})
+
+
+def _is_blocked_ip(ip_str: str) -> bool:
+    try:
+        ip = ipaddress.ip_address(ip_str)
+    except ValueError:
+        return True
+    return (
+        ip.is_private
+        or ip.is_loopback
+        or ip.is_link_local
+        or ip.is_multicast
+        or ip.is_reserved
+        or ip.is_unspecified
+    )
+
+
+def _assert_public_host(hostname: str, port: int | None, scheme: str) -> None:
+    """Reject hostnames that resolve to a private, loopback, or link-local
+    address (including the 169.254.169.254 cloud metadata endpoint).
+
+    The redirect tracer is reachable from an untrusted network caller via
+    ``phishguard serve``, so every hop's destination — not just the URL a
+    caller typed in directly — must be checked before connecting; otherwise
+    a redirect chain could be used to make this process issue requests to
+    internal services on the caller's behalf (SSRF). This is a pre-flight
+    DNS check, not a guarantee against DNS rebinding between check and
+    connect; closing that narrow gap would require connecting to the
+    resolved IP directly, which breaks Host-header/SNI-based routing for
+    the (common) legitimate case of tracing real redirect chains.
+    """
+    if hostname.lower() in _BLOCKED_HOSTNAMES:
+        raise ValueError(f"Refusing to fetch internal host: {hostname}")
+
+    default_port = 443 if scheme == "https" else 80
+    try:
+        results = socket.getaddrinfo(hostname, port or default_port, proto=socket.IPPROTO_TCP)
+    except OSError as exc:
+        raise ValueError(f"Could not resolve host: {hostname}") from exc
+
+    for _family, _kind, _proto, _canon, sockaddr in results:
+        if _is_blocked_ip(sockaddr[0]):
+            raise ValueError(
+                f"Refusing to fetch a redirect target that resolves to a "
+                f"private or internal address: {hostname}"
+            )
 
 
 def _domain(url: str) -> str:
@@ -56,6 +104,8 @@ def _head(url: str, timeout: int) -> tuple[int, str | None]:
     path = parsed.path or "/"
     if parsed.query:
         path = f"{path}?{parsed.query}"
+
+    _assert_public_host(hostname, port, parsed.scheme)
 
     headers = {"User-Agent": _USER_AGENT, "Connection": "close"}
 

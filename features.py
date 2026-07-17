@@ -266,7 +266,10 @@ def extract_email_features(subject: str, body: str) -> dict:
     exclamation_count = body.count("!")
     all_caps_words = sum(1 for w in words if w.isupper() and len(w) > 2)
     html_tags = len(re.findall(r"<[a-zA-Z]+", body))
-    has_attachment_mention = int(bool(re.search(r"attach|download|open.*file", text)))
+    # The gap between "open" and "file" is bounded to avoid a polynomial
+    # backtracking blowup on adversarial input (e.g. "open open open ...").
+    # This text is attacker-controlled when reached via `phishguard serve`.
+    has_attachment_mention = int(bool(re.search(r"attach|download|open.{0,80}file", text)))
 
     return {
         "url_count":              url_count,
