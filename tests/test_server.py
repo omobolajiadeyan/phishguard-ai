@@ -1,12 +1,13 @@
 import json
 import threading
+import time
 import unittest
 import urllib.error
 import urllib.request
 from http.server import ThreadingHTTPServer
 from unittest.mock import patch
 
-from server import PhishGuardRequestHandler
+from server import PhishGuardRequestHandler, _RateLimiter, _static_assets
 
 
 class ServerTests(unittest.TestCase):
@@ -123,6 +124,108 @@ class ServerTests(unittest.TestCase):
             urllib.request.urlopen(req, timeout=5)
         with ctx.exception:
             self.assertEqual(ctx.exception.code, 400)
+
+    def test_index_serves_the_demo_page(self):
+        with urllib.request.urlopen(self._url("/"), timeout=5) as resp:
+            self.assertEqual(resp.status, 200)
+            self.assertIn("text/html", resp.headers.get("Content-Type", ""))
+            body = resp.read().decode("utf-8")
+            self.assertIn("PhishGuard AI", body)
+
+    def test_app_js_is_served_with_javascript_content_type(self):
+        with urllib.request.urlopen(self._url("/app.js"), timeout=5) as resp:
+            self.assertEqual(resp.status, 200)
+            self.assertIn("javascript", resp.headers.get("Content-Type", ""))
+
+    def test_style_css_is_served_with_css_content_type(self):
+        with urllib.request.urlopen(self._url("/style.css"), timeout=5) as resp:
+            self.assertEqual(resp.status, 200)
+            self.assertIn("text/css", resp.headers.get("Content-Type", ""))
+
+
+class StaticAssetLoadingTests(unittest.TestCase):
+    def test_known_routes_resolve_to_real_files_on_disk(self):
+        assets = _static_assets()
+        self.assertIn("/", assets)
+        self.assertIn("/app.js", assets)
+        self.assertIn("/style.css", assets)
+        for body, _content_type in assets.values():
+            self.assertIsInstance(body, bytes)
+            self.assertGreater(len(body), 0)
+
+
+class RateLimiterTests(unittest.TestCase):
+    def test_allows_up_to_the_limit_then_blocks(self):
+        limiter = _RateLimiter(max_requests=2, window_seconds=60)
+        self.assertTrue(limiter.allow("1.2.3.4"))
+        self.assertTrue(limiter.allow("1.2.3.4"))
+        self.assertFalse(limiter.allow("1.2.3.4"))
+
+    def test_keys_are_independent(self):
+        limiter = _RateLimiter(max_requests=1, window_seconds=60)
+        self.assertTrue(limiter.allow("1.2.3.4"))
+        self.assertTrue(limiter.allow("5.6.7.8"))
+        self.assertFalse(limiter.allow("1.2.3.4"))
+
+    def test_zero_disables_limiting(self):
+        limiter = _RateLimiter(max_requests=0, window_seconds=60)
+        for _ in range(50):
+            self.assertTrue(limiter.allow("1.2.3.4"))
+
+    def test_requests_outside_the_window_are_forgotten(self):
+        limiter = _RateLimiter(max_requests=1, window_seconds=0.05)
+        self.assertTrue(limiter.allow("1.2.3.4"))
+        self.assertFalse(limiter.allow("1.2.3.4"))
+        time.sleep(0.1)
+        self.assertTrue(limiter.allow("1.2.3.4"))
+
+
+class RateLimitedServerTests(unittest.TestCase):
+    """End-to-end check that a configured rate_limiter is actually
+    enforced over the wire, with the response shape a client depends on."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.httpd = ThreadingHTTPServer(("127.0.0.1", 0), PhishGuardRequestHandler)
+        cls.httpd.rate_limiter = _RateLimiter(max_requests=1, window_seconds=60)
+        cls.port = cls.httpd.server_address[1]
+        cls.thread = threading.Thread(target=cls.httpd.serve_forever, daemon=True)
+        cls.thread.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.httpd.shutdown()
+        cls.httpd.server_close()
+        cls.thread.join(timeout=5)
+
+    def test_second_request_from_same_ip_is_rate_limited(self):
+        url = f"http://127.0.0.1:{self.port}/v1/url"
+        payload = json.dumps({"url": "https://example.com"}).encode("utf-8")
+
+        def post():
+            req = urllib.request.Request(
+                url, data=payload, method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            return urllib.request.urlopen(req, timeout=5)
+
+        with post() as resp:
+            self.assertEqual(resp.status, 200)
+
+        with self.assertRaises(urllib.error.HTTPError) as ctx:
+            post()
+        with ctx.exception:
+            self.assertEqual(ctx.exception.code, 429)
+            self.assertIn("Retry-After", ctx.exception.headers)
+            body = json.loads(ctx.exception.read())
+            self.assertIn("error", body)
+
+    def test_get_requests_are_not_rate_limited(self):
+        # Only POST /v1/* is metered; static assets and healthz stay free.
+        url = f"http://127.0.0.1:{self.port}/healthz"
+        for _ in range(5):
+            with urllib.request.urlopen(url, timeout=5) as resp:
+                self.assertEqual(resp.status, 200)
 
 
 if __name__ == "__main__":

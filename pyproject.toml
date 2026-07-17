@@ -52,3 +52,4 @@ py-modules = ["email_auth", "features", "model", "phishguard", "psl", "redirect"
 
 [tool.setuptools.data-files]
 "data" = ["data/public_suffix_list.dat"]
+"web" = ["web/index.html", "web/app.js", "web/style.css"]

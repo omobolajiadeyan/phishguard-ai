@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PhishGuard AI — Phishing Detection Demo</title>
+  <meta name="description" content="Explainable, offline phishing detection for URLs and email. Paste a URL or email to see a verdict with a feature-level explanation." />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>PhishGuard AI</h1>
+    <p class="tagline">
+      Explainable phishing detection for URLs and email — zero runtime dependencies.
+      <a href="https://github.com/omobolajiadeyan/phishguard-ai" target="_blank" rel="noopener">Source on GitHub</a>
+    </p>
+  </header>
+
+  <main>
+    <nav class="tabs" role="tablist">
+      <button type="button" class="tab active" data-tab="url" role="tab" aria-selected="true">URL</button>
+      <button type="button" class="tab" data-tab="email" role="tab" aria-selected="false">Email</button>
+    </nav>
+
+    <section id="panel-url" class="panel" role="tabpanel">
+      <form id="url-form">
+        <label for="url-input">URL to analyze</label>
+        <input id="url-input" name="url" type="text" placeholder="https://paypa1-secure-login.xyz/verify" autocomplete="off" required />
+
+        <label for="url-redirects">
+          Follow redirects
+          <span class="hint">(optional — resolves short links first; requires the server to reach the internet)</span>
+        </label>
+        <input id="url-redirects" name="follow_redirects" type="number" min="0" max="20" value="0" />
+
+        <button type="submit">Check URL</button>
+      </form>
+    </section>
+
+    <section id="panel-email" class="panel hidden" role="tabpanel">
+      <form id="email-form">
+        <label for="email-subject">Subject</label>
+        <input id="email-subject" name="subject" type="text" placeholder="URGENT: Verify your account" required />
+
+        <label for="email-body">Body</label>
+        <textarea id="email-body" name="body" rows="5" placeholder="Click here immediately to verify your account or it will be deleted." required></textarea>
+
+        <label for="email-auth">
+          Authentication-Results header
+          <span class="hint">(optional — from a receiver you trust)</span>
+        </label>
+        <input id="email-auth" name="authentication_results" type="text" placeholder="mx.example; spf=fail; dkim=fail; dmarc=fail" />
+
+        <button type="submit">Check Email</button>
+      </form>
+    </section>
+
+    <section id="result" class="result hidden" aria-live="polite">
+      <div class="verdict-row">
+        <span id="verdict-badge" class="badge"></span>
+        <span id="probability-text"></span>
+      </div>
+      <div class="bar-track"><div id="probability-fill" class="bar-fill"></div></div>
+      <div id="redirect-note" class="hint hidden"></div>
+      <details id="features-details">
+        <summary>Feature breakdown</summary>
+        <table id="features-table"><tbody></tbody></table>
+      </details>
+    </section>
+
+    <p id="error" class="error hidden" role="alert"></p>
+  </main>
+
+  <footer>
+    <p>
+      Heuristic scoring, not a guarantee — see the
+      <a href="https://github.com/omobolajiadeyan/phishguard-ai/blob/main/docs/DETECTION_MODEL.md" target="_blank" rel="noopener">detection model docs</a>
+      for what each feature means and its known limitations. This demo talks directly to a public instance of the same
+      <a href="https://github.com/omobolajiadeyan/phishguard-ai/blob/main/server.py" target="_blank" rel="noopener">REST API</a>
+      shipped in the CLI (<code>phishguard serve</code>) — nothing you enter is stored.
+    </p>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

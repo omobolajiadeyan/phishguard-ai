@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: phishguard-ai-demo
+    runtime: python
+    plan: free
+    branch: main
+    buildCommand: pip install .
+    startCommand: phishguard serve --host 0.0.0.0 --port $PORT --rate-limit 30 --rate-limit-window 60
+    healthCheckPath: /healthz
+    autoDeployTrigger: commit
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7

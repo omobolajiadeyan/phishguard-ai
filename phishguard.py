@@ -411,7 +411,8 @@ Examples:
 
     # Serve command
     serve_parser = subparsers.add_parser(
-        "serve", help="Run a local REST API server for URL and email scoring"
+        "serve",
+        help="Run a local REST API server and browser demo for URL and email scoring",
     )
     serve_parser.add_argument(
         "--host", default="127.0.0.1", help="Host to bind (default: 127.0.0.1)"
@@ -419,11 +420,28 @@ Examples:
     serve_parser.add_argument(
         "--port", type=int, default=8765, help="Port to bind (default: 8765)"
     )
+    serve_parser.add_argument(
+        "--rate-limit",
+        type=int,
+        default=30,
+        metavar="N",
+        help=(
+            "Max POST /v1/* requests per client IP per --rate-limit-window "
+            "seconds (default: 30). Pass 0 to disable."
+        ),
+    )
+    serve_parser.add_argument(
+        "--rate-limit-window",
+        type=float,
+        default=60.0,
+        metavar="SECONDS",
+        help="Rate limit window in seconds (default: 60)",
+    )
 
     args = parser.parse_args()
 
     if args.command == "serve":
-        run_server(args.host, args.port)
+        run_server(args.host, args.port, args.rate_limit, args.rate_limit_window)
         return
 
     if args.format == "sarif" and not args.output:

@@ -35,6 +35,10 @@ tracked in GitHub issues so contributors can discuss and claim scoped tasks.
 - **`serve` REST API mode** — stdlib-only HTTP server exposing `/healthz`,
   `/v1/url`, and `/v1/email` for SIEM and proxy integrations, with no new
   runtime dependencies
+- **Browser demo UI + rate limiting** — `phishguard serve` now also serves a
+  zero-build-step web page at `/` calling the same API, plus per-IP rate
+  limiting on `POST /v1/*` and a `render.yaml` deployment blueprint, so the
+  tool has a "try it in a browser" path instead of CLI-only
 
 ## Next
 

@@ -12,6 +12,14 @@ All notable changes to PhishGuard AI are documented here.
   dependencies. Exposes `GET /healthz`, `POST /v1/url` (with optional
   `follow_redirects`), and `POST /v1/email`. Binds to `127.0.0.1` by default;
   see the README's REST API Server section for the security note on `--host`.
+- **Browser demo UI**, served by `phishguard serve` at `/` alongside the API
+  (`web/index.html` + `app.js` + `style.css`, vanilla JS, no build step, no
+  new dependencies). Lets someone try URL and email scoring in a browser
+  without installing anything. `render.yaml` provides a one-click Render
+  deployment blueprint.
+- **Per-IP rate limiting on `POST /v1/*`** (`--rate-limit` / `--rate-limit-window`,
+  default 30 requests/60s, `0` disables it), a basic safeguard for anyone
+  running `serve` somewhere publicly reachable.
 
 ### Fixed
 

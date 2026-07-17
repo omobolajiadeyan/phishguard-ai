@@ -1,20 +1,87 @@
 """
-PhishGuard AI HTTP server — stdlib-only REST API for URL and email scoring.
+PhishGuard AI HTTP server — stdlib-only REST API and browser demo for URL
+and email scoring.
 
-Intended for SIEM and proxy integrations that want a long-running scoring
-endpoint instead of shelling out to the CLI per lookup. Binds to loopback
-(127.0.0.1) by default; only bind to a wider host behind your own network
-controls and authentication, since this server has none of its own.
+Intended for SIEM/proxy integrations that want a long-running scoring
+endpoint instead of shelling out to the CLI per lookup, and for a
+zero-install browser demo (GET / serves web/index.html, which calls the
+same API). Binds to loopback (127.0.0.1) by default; if you bind to a
+wider host to expose this publicly, the built-in per-IP rate limit is a
+basic safeguard, not a substitute for your own network controls.
 """
 
+import functools
 import json
+import sysconfig
+import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 
 from model import classify, score_email, score_url
 from redirect import follow_redirects
 
 MAX_BODY_BYTES = 1_000_000
 MAX_FOLLOW_REDIRECTS = 20
+
+# Mirrors psl.py's pattern: prefer the web/ directory next to this file
+# (repo checkout, editable install), fall back to where `data-files` in
+# pyproject.toml puts it for a real wheel install.
+_REPO_WEB_DIR = Path(__file__).resolve().parent / "web"
+_INSTALLED_WEB_DIR = Path(sysconfig.get_path("data")) / "web"
+_WEB_DIR = _REPO_WEB_DIR if _REPO_WEB_DIR.is_dir() else _INSTALLED_WEB_DIR
+_STATIC_ROUTES = {
+    "/": ("index.html", "text/html; charset=utf-8"),
+    "/index.html": ("index.html", "text/html; charset=utf-8"),
+    "/app.js": ("app.js", "text/javascript; charset=utf-8"),
+    "/style.css": ("style.css", "text/css; charset=utf-8"),
+}
+
+
+@functools.lru_cache(maxsize=1)
+def _static_assets() -> dict:
+    """Load the demo UI's files once and cache them by route.
+
+    Only the exact filenames named in _STATIC_ROUTES are ever read — no
+    path is built from request input, so this cannot be used for path
+    traversal outside web/.
+    """
+    assets = {}
+    for route, (filename, content_type) in _STATIC_ROUTES.items():
+        path = _WEB_DIR / filename
+        if path.is_file():
+            assets[route] = (path.read_bytes(), content_type)
+    return assets
+
+
+class _RateLimiter:
+    """Sliding-window per-key request limiter, safe for concurrent threads.
+
+    Deliberately simple for a small demo/API server: memory grows with the
+    number of distinct keys seen (stale entries are trimmed lazily on next
+    use, not on a background timer), which is fine at the traffic level
+    this is meant for but would need revisiting for high-cardinality abuse.
+    """
+
+    def __init__(self, max_requests: int, window_seconds: float):
+        self.max_requests = max_requests
+        self.window_seconds = window_seconds
+        self._lock = threading.Lock()
+        self._hits: dict[str, list[float]] = {}
+
+    def allow(self, key: str) -> bool:
+        if self.max_requests <= 0:
+            return True
+        now = time.monotonic()
+        cutoff = now - self.window_seconds
+        with self._lock:
+            hits = self._hits.setdefault(key, [])
+            while hits and hits[0] < cutoff:
+                hits.pop(0)
+            if len(hits) >= self.max_requests:
+                return False
+            hits.append(now)
+            return True
 
 
 class PhishGuardRequestHandler(BaseHTTPRequestHandler):
@@ -27,6 +94,13 @@ class PhishGuardRequestHandler(BaseHTTPRequestHandler):
         body = json.dumps(payload).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _send_bytes(self, status: int, body: bytes, content_type: str) -> None:
+        self.send_response(status)
+        self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -45,19 +119,39 @@ class PhishGuardRequestHandler(BaseHTTPRequestHandler):
             return None
         return data if isinstance(data, dict) else None
 
+    def _rate_limited(self) -> bool:
+        limiter = getattr(self.server, "rate_limiter", None)
+        if limiter is None or limiter.allow(self.client_address[0]):
+            return False
+        body = json.dumps({"error": "rate limit exceeded, try again shortly"}).encode()
+        self.send_response(429)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Retry-After", str(int(limiter.window_seconds)))
+        self.end_headers()
+        self.wfile.write(body)
+        return True
+
     def do_GET(self):
         if self.path == "/healthz":
             self._send_json(200, {"status": "ok"})
             return
+        asset = _static_assets().get(self.path)
+        if asset is not None:
+            self._send_bytes(200, *asset)
+            return
         self._send_json(404, {"error": "not found"})
 
     def do_POST(self):
+        if self.path not in ("/v1/url", "/v1/email"):
+            self._send_json(404, {"error": "not found"})
+            return
+        if self._rate_limited():
+            return
         if self.path == "/v1/url":
             self._handle_url()
-        elif self.path == "/v1/email":
-            self._handle_email()
         else:
-            self._send_json(404, {"error": "not found"})
+            self._handle_email()
 
     def _handle_url(self):
         data = self._read_json_body()
@@ -144,10 +238,21 @@ class PhishGuardRequestHandler(BaseHTTPRequestHandler):
         )
 
 
-def run_server(host: str = "127.0.0.1", port: int = 8765) -> None:
+def run_server(
+    host: str = "127.0.0.1",
+    port: int = 8765,
+    rate_limit: int = 30,
+    rate_limit_window: float = 60.0,
+) -> None:
+    """Start the server. *rate_limit* is the max POST /v1/* requests allowed
+    per client IP per *rate_limit_window* seconds; pass 0 to disable it
+    (e.g. for local development)."""
     server = ThreadingHTTPServer((host, port), PhishGuardRequestHandler)
+    server.rate_limiter = _RateLimiter(rate_limit, rate_limit_window)
     print(f"PhishGuard AI serving on http://{host}:{port}")
-    print("Endpoints: GET /healthz, POST /v1/url, POST /v1/email")
+    print("Browser demo: GET /   |   API: POST /v1/url, POST /v1/email, GET /healthz")
+    if rate_limit > 0:
+        print(f"Rate limit: {rate_limit} requests / {rate_limit_window:.0f}s per IP")
     print("Press Ctrl+C to stop.")
     try:
         server.serve_forever()
