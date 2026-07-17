@@ -27,12 +27,6 @@
         <label for="url-input">URL to analyze</label>
         <input id="url-input" name="url" type="text" placeholder="https://paypa1-secure-login.xyz/verify" autocomplete="off" required />
 
-        <label for="url-redirects">
-          Follow redirects
-          <span class="hint">(optional — resolves short links first; requires the server to reach the internet)</span>
-        </label>
-        <input id="url-redirects" name="follow_redirects" type="number" min="0" max="20" value="0" />
-
         <button type="submit">Check URL</button>
       </form>
     </section>
@@ -61,7 +55,6 @@
         <span id="probability-text"></span>
       </div>
       <div class="bar-track"><div id="probability-fill" class="bar-fill"></div></div>
-      <div id="redirect-note" class="hint hidden"></div>
       <details id="features-details">
         <summary>Feature breakdown</summary>
         <table id="features-table"><tbody></tbody></table>
@@ -75,12 +68,15 @@
     <p>
       Heuristic scoring, not a guarantee — see the
       <a href="https://github.com/omobolajiadeyan/phishguard-ai/blob/main/docs/DETECTION_MODEL.md" target="_blank" rel="noopener">detection model docs</a>
-      for what each feature means and its known limitations. This demo talks directly to a public instance of the same
-      <a href="https://github.com/omobolajiadeyan/phishguard-ai/blob/main/server.py" target="_blank" rel="noopener">REST API</a>
-      shipped in the CLI (<code>phishguard serve</code>) — nothing you enter is stored.
+      for what each feature means and its known limitations. Everything on this page runs
+      entirely in your browser (<a href="https://github.com/omobolajiadeyan/phishguard-ai/blob/main/web/scoring.js" target="_blank" rel="noopener">scoring.js</a>,
+      a verified port of the same Python model) — nothing you type is sent anywhere.
+      For redirect-chain resolution and a REST API, self-host with
+      <code>phishguard serve</code>.
     </p>
   </footer>
 
+  <script src="/scoring.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>

@@ -137,6 +137,11 @@ class ServerTests(unittest.TestCase):
             self.assertEqual(resp.status, 200)
             self.assertIn("javascript", resp.headers.get("Content-Type", ""))
 
+    def test_scoring_js_is_served_with_javascript_content_type(self):
+        with urllib.request.urlopen(self._url("/scoring.js"), timeout=5) as resp:
+            self.assertEqual(resp.status, 200)
+            self.assertIn("javascript", resp.headers.get("Content-Type", ""))
+
     def test_style_css_is_served_with_css_content_type(self):
         with urllib.request.urlopen(self._url("/style.css"), timeout=5) as resp:
             self.assertEqual(resp.status, 200)
@@ -148,6 +153,7 @@ class StaticAssetLoadingTests(unittest.TestCase):
         assets = _static_assets()
         self.assertIn("/", assets)
         self.assertIn("/app.js", assets)
+        self.assertIn("/scoring.js", assets)
         self.assertIn("/style.css", assets)
         for body, _content_type in assets.values():
             self.assertIsInstance(body, bytes)

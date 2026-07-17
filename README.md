@@ -215,13 +215,28 @@ education demos, email-authentication experiments, and benchmark work.
 See the [detection model documentation](docs/DETECTION_MODEL.md) for feature
 semantics, limitations, and the evidence required for scoring changes.
 
-## REST API Server and Browser Demo
+## Browser Demo
+
+`web/` is a small, self-contained browser UI — paste a URL or email and get
+a verdict with a feature breakdown. Scoring runs entirely client-side via
+`web/scoring.js`, a JavaScript port of the same heuristic model, verified
+against the Python original by `tests/test_js_parity.py` (both
+implementations are run on shared cases and the suite fails if they ever
+disagree). Nothing you type leaves the browser, and there's nothing to host
+or keep running — it's plain HTML/CSS/JS with no build step and no
+dependencies, deployable anywhere static files can be served (GitHub Pages,
+etc.).
+
+Open `web/index.html` directly, or serve the repo locally, to try it.
+
+## REST API Server
 
 For SIEM and proxy integrations that want a long-running scoring endpoint
 instead of shelling out to the CLI per lookup, run PhishGuard AI as a local
 HTTP server. It uses only the Python standard library — no new dependencies.
-The same server also serves a small browser demo UI, so `phishguard serve`
-gives you a working web page to try, not just a bare JSON API.
+The server also serves the same browser demo UI at `/`, plus redirect-chain
+resolution, which the static client-side demo can't do (following short
+links needs a real server-side request).
 
 ```bash
 phishguard serve --port 8765
@@ -248,14 +263,10 @@ own — only pass `--host` to expose it more broadly if you put it behind your
 own network controls and authentication. `POST /v1/*` is rate-limited per
 client IP (`--rate-limit`, default 30 requests/60s; pass `0` to disable for
 local development) as a basic safeguard if you do expose it publicly.
-
-### Deploying the demo
-
 `render.yaml` in the repo root is a ready-to-use [Render](https://render.com)
-Blueprint (free-tier web service) — connect the repo on Render and it builds
-with `pip install .` and starts `phishguard serve --host 0.0.0.0 --port $PORT`.
-Any host that can run a long-lived Python process works the same way; there's
-no database or persistent state to provision.
+Blueprint if you want to self-host it; any host that can run a long-lived
+Python process works the same way, with no database or persistent state to
+provision.
 
 ## Reproducible Benchmark
 
