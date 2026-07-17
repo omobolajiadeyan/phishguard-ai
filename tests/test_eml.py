@@ -93,6 +93,8 @@ class EmlCommandTests(unittest.TestCase):
         self.assertEqual(payload["features"]["dkim_result"], "pass")
         self.assertEqual(payload["features"]["dmarc_result"], "pass")
         self.assertTrue(payload["authentication_evidence"]["matched"])
+        self.assertIn("using trusted Authentication-Results evidence", result.stdout)
+        self.assertNotIn("mx.company.com", result.stdout)
 
     def test_lookalike_authserv_id_is_not_trusted(self):
         lookalike_eml = SAFE_EML.replace(
@@ -114,6 +116,8 @@ class EmlCommandTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(payload["features"]["dmarc_result"], "unknown")
         self.assertFalse(payload["authentication_evidence"]["matched"])
+        self.assertIn("no exact trusted authserv-id match", result.stdout)
+        self.assertNotIn("mx.company.com", result.stdout)
 
     def test_safe_eml_returns_exit_zero(self):
         with tempfile.TemporaryDirectory() as td:

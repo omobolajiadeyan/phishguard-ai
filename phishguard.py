@@ -214,8 +214,8 @@ def analyze_eml(
     elif trusted_authserv_id is not None and auth_results is None:
         print(
             style(
-                f"  Auth    : no exact authserv-id match for "
-                f"{trusted_authserv_id}; authentication evidence ignored",
+                "  Auth    : no exact trusted authserv-id match; "
+                "authentication evidence ignored",
                 YELLOW,
                 plain=plain,
             )
@@ -223,8 +223,7 @@ def analyze_eml(
     elif auth_results is not None:
         print(
             style(
-                f"  Auth    : using Authentication-Results from "
-                f"{trusted_authserv_id}",
+                "  Auth    : using trusted Authentication-Results evidence",
                 CYAN,
                 plain=plain,
             )
