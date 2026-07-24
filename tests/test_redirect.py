@@ -5,6 +5,7 @@ ConnectionRefusedError so the contract tests are deterministic and never
 depend on a real port being free.
 """
 
+import ssl
 import unittest
 from unittest.mock import patch
 
@@ -179,6 +180,10 @@ class SsrfProtectionTests(unittest.TestCase):
         sock.return_value.connect.assert_called_once_with(("8.8.8.8", 443))
         create_context.return_value.wrap_socket.assert_called_once_with(
             sock.return_value, server_hostname="public.example"
+        )
+        self.assertEqual(
+            create_context.return_value.minimum_version,
+            ssl.TLSVersion.TLSv1_2,
         )
 
     def test_mixed_public_and_private_dns_results_are_rejected(self):

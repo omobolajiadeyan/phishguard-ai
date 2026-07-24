@@ -133,6 +133,7 @@ def _head(url: str, timeout: int) -> tuple[int, str | None]:
     for family, socktype, proto, sockaddr in addresses:
         if parsed.scheme == "https":
             ctx = ssl.create_default_context()
+            ctx.minimum_version = ssl.TLSVersion.TLSv1_2
             conn: http.client.HTTPConnection = http.client.HTTPSConnection(
                 hostname, port=port, timeout=timeout, context=ctx
             )
