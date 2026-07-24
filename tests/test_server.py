@@ -48,6 +48,16 @@ class ServerTests(unittest.TestCase):
             self.assertEqual(resp.status, 200)
             self.assertEqual(json.loads(resp.read()), {"status": "ok"})
 
+    def test_routes_ignore_query_strings(self):
+        with urllib.request.urlopen(self._url("/healthz?probe=1"), timeout=5) as resp:
+            self.assertEqual(resp.status, 200)
+        with urllib.request.urlopen(self._url("/style.css?v=1"), timeout=5) as resp:
+            self.assertIn("text/css", resp.headers.get("Content-Type", ""))
+        status, _body = self._post(
+            "/v1/url?source=test", {"url": "https://example.com"}
+        )
+        self.assertEqual(status, 200)
+
     def test_unknown_get_path_is_404(self):
         with self.assertRaises(urllib.error.HTTPError) as ctx:
             urllib.request.urlopen(self._url("/nope"), timeout=5)
@@ -117,6 +127,18 @@ class ServerTests(unittest.TestCase):
         req = urllib.request.Request(
             self._url("/v1/url"),
             data=b"{not json",
+            method="POST",
+            headers={"Content-Type": "application/json"},
+        )
+        with self.assertRaises(urllib.error.HTTPError) as ctx:
+            urllib.request.urlopen(req, timeout=5)
+        with ctx.exception:
+            self.assertEqual(ctx.exception.code, 400)
+
+    def test_invalid_utf8_json_is_400(self):
+        req = urllib.request.Request(
+            self._url("/v1/url"),
+            data=b'{"url":"\xff"}',
             method="POST",
             headers={"Content-Type": "application/json"},
         )

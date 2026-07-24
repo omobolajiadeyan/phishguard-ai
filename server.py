@@ -15,6 +15,7 @@ import json
 import sysconfig
 import threading
 import time
+import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -23,6 +24,7 @@ from redirect import follow_redirects
 
 MAX_BODY_BYTES = 1_000_000
 MAX_FOLLOW_REDIRECTS = 20
+CLIENT_SOCKET_TIMEOUT = 10
 
 # Mirrors psl.py's pattern: prefer the web/ directory next to this file
 # (repo checkout, editable install), fall back to where `data-files` in
@@ -88,14 +90,22 @@ class _RateLimiter:
 class PhishGuardRequestHandler(BaseHTTPRequestHandler):
     server_version = "PhishGuardAI/1"
 
+    def setup(self):
+        super().setup()
+        self.connection.settimeout(CLIENT_SOCKET_TIMEOUT)
+
     def log_message(self, format, *args):  # noqa: A002 - stdlib signature
         pass
 
-    def _send_json(self, status: int, payload: dict) -> None:
+    def _send_json(
+        self, status: int, payload: dict, headers: dict[str, str] | None = None
+    ) -> None:
         body = json.dumps(payload).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
+        for name, value in (headers or {}).items():
+            self.send_header(name, value)
         self.end_headers()
         self.wfile.write(body)
 
@@ -116,7 +126,7 @@ class PhishGuardRequestHandler(BaseHTTPRequestHandler):
         raw = self.rfile.read(length)
         try:
             data = json.loads(raw)
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, UnicodeDecodeError):
             return None
         return data if isinstance(data, dict) else None
 
@@ -124,32 +134,32 @@ class PhishGuardRequestHandler(BaseHTTPRequestHandler):
         limiter = getattr(self.server, "rate_limiter", None)
         if limiter is None or limiter.allow(self.client_address[0]):
             return False
-        body = json.dumps({"error": "rate limit exceeded, try again shortly"}).encode()
-        self.send_response(429)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(body)))
-        self.send_header("Retry-After", str(int(limiter.window_seconds)))
-        self.end_headers()
-        self.wfile.write(body)
+        self._send_json(
+            429,
+            {"error": "rate limit exceeded, try again shortly"},
+            {"Retry-After": str(int(limiter.window_seconds))},
+        )
         return True
 
     def do_GET(self):
-        if self.path == "/healthz":
+        path = urllib.parse.urlsplit(self.path).path
+        if path == "/healthz":
             self._send_json(200, {"status": "ok"})
             return
-        asset = _static_assets().get(self.path)
+        asset = _static_assets().get(path)
         if asset is not None:
             self._send_bytes(200, *asset)
             return
         self._send_json(404, {"error": "not found"})
 
     def do_POST(self):
-        if self.path not in ("/v1/url", "/v1/email"):
+        path = urllib.parse.urlsplit(self.path).path
+        if path not in ("/v1/url", "/v1/email"):
             self._send_json(404, {"error": "not found"})
             return
         if self._rate_limited():
             return
-        if self.path == "/v1/url":
+        if path == "/v1/url":
             self._handle_url()
         else:
             self._handle_email()

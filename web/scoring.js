@@ -38,6 +38,13 @@ const PhishGuardScoring = (() => {
 
   // --- URL features -------------------------------------------------
 
+  // Python len(str) counts Unicode code points; JavaScript String.length
+  // counts UTF-16 code units. Array.from keeps browser scoring in parity
+  // for emoji and other non-BMP characters.
+  function pythonLength(value) {
+    return Array.from(value).length;
+  }
+
   // Python's urlparse() never throws and validates almost nothing: it
   // accepts out-of-range IPv4 octets ("256.1.1.1"), doesn't canonicalize
   // octal-looking hosts ("0177.0.0.1" stays literal, unlike the WHATWG URL
@@ -108,7 +115,7 @@ const PhishGuardScoring = (() => {
   }
 
   function urlLength(url) {
-    return url.length;
+    return pythonLength(url);
   }
 
   function subdomainCount(url) {
@@ -142,7 +149,7 @@ const PhishGuardScoring = (() => {
     for (const ch of url) {
       if (ch >= "0" && ch <= "9") digits += 1;
     }
-    return digits / url.length;
+    return digits / pythonLength(url);
   }
 
   function phishingKeywordCount(url) {
@@ -171,7 +178,7 @@ const PhishGuardScoring = (() => {
     const hostname = safeHostname(url);
     const parts = hostname ? hostname.split(".") : [];
     if (parts.length >= 2) return parts[parts.length - 2].length;
-    return hostname.length;
+    return pythonLength(hostname);
   }
 
   function entropy(text) {
@@ -180,7 +187,7 @@ const PhishGuardScoring = (() => {
     for (const ch of text) {
       freq[ch] = (freq[ch] || 0) + 1;
     }
-    const length = text.length;
+    const length = pythonLength(text);
     let sum = 0;
     for (const ch of Object.keys(freq)) {
       const p = freq[ch] / length;
@@ -224,7 +231,7 @@ const PhishGuardScoring = (() => {
 
     const label = labels[0];
     if (label.startsWith("xn--")) return 0;
-    if (label.length < 11) return 0;
+    if (pythonLength(label) < 11) return 0;
     if (!isAsciiAlnum(label)) return 0;
     return entropy(label) >= 3.0 ? 1 : 0;
   }
@@ -232,15 +239,17 @@ const PhishGuardScoring = (() => {
   // --- Typosquatting ---------------------------------------------------
 
   function levenshtein(a, b) {
-    if (a.length < b.length) {
-      const tmp = a; a = b; b = tmp;
+    let aChars = Array.from(a);
+    let bChars = Array.from(b);
+    if (aChars.length < bChars.length) {
+      const tmp = aChars; aChars = bChars; bChars = tmp;
     }
     let prev = [];
-    for (let j = 0; j <= b.length; j++) prev.push(j);
-    for (let i = 1; i <= a.length; i++) {
+    for (let j = 0; j <= bChars.length; j++) prev.push(j);
+    for (let i = 1; i <= aChars.length; i++) {
       const curr = [i];
-      for (let j = 1; j <= b.length; j++) {
-        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      for (let j = 1; j <= bChars.length; j++) {
+        const cost = aChars[i - 1] === bChars[j - 1] ? 0 : 1;
         curr.push(Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost));
       }
       prev = curr;
@@ -309,7 +318,7 @@ const PhishGuardScoring = (() => {
     }
     const exclamationCount = (body.match(/!/g) || []).length;
     const allCapsWords = words.filter(
-      (w) => w === w.toUpperCase() && w !== w.toLowerCase() && w.length > 2
+      (w) => w === w.toUpperCase() && w !== w.toLowerCase() && pythonLength(w) > 2
     ).length;
     const htmlTags = countMatches(/<[a-zA-Z]+/g, body);
     const hasAttachmentMention = /attach|download|open.{0,80}file/.test(text) ? 1 : 0;

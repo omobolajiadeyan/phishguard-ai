@@ -133,7 +133,7 @@ textarea {
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text);
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-family: inherit;
   padding: 0.55rem 0.65rem;
 }

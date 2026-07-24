@@ -8,7 +8,14 @@ depend on a real port being free.
 import unittest
 from unittest.mock import patch
 
-from redirect import _domain, _head, _is_public_host, _registrable_domain, follow_redirects
+from redirect import (
+    _domain,
+    _head,
+    _is_public_host,
+    _registrable_domain,
+    _resolve_public_addresses,
+    follow_redirects,
+)
 
 _UNREACHABLE = "http://example.invalid:19999/unreachable"
 
@@ -79,9 +86,10 @@ class RedirectResultContractTests(unittest.TestCase):
 
     def test_credential_url_uses_hostname_not_netloc(self):
         """netloc includes userinfo; _head must connect to the real host only."""
-        with patch("redirect._is_public_host", return_value=True), patch(
-            "redirect.http.client.HTTPConnection"
-        ) as connection:
+        addresses = [(2, 1, 6, ("8.8.8.8", 80))]
+        with patch("redirect._resolve_public_addresses", return_value=addresses), patch(
+            "redirect.socket.socket"
+        ) as sock, patch("redirect.http.client.HTTPConnection") as connection:
             response = connection.return_value.getresponse.return_value
             response.status = 200
             response.getheader.return_value = None
@@ -89,6 +97,7 @@ class RedirectResultContractTests(unittest.TestCase):
             _head("http://paypal.com@evil.com/login", timeout=1)
 
         connection.assert_called_once_with("evil.com", port=None, timeout=1)
+        sock.return_value.connect.assert_called_once_with(("8.8.8.8", 80))
 
     def test_cross_domain_redirect_distinguishes_ip_literals(self):
         with patch(
@@ -149,6 +158,39 @@ class SsrfProtectionTests(unittest.TestCase):
             return_value=[(2, 1, 6, "", ("8.8.8.8", 443))],
         ):
             self.assertTrue(_is_public_host("public.example", None, "https"))
+
+    def test_resolution_is_pinned_for_connection(self):
+        dns_result = [(2, 1, 6, "", ("8.8.8.8", 443))]
+        with patch(
+            "redirect.socket.getaddrinfo", return_value=dns_result
+        ) as getaddrinfo, patch("redirect.socket.socket") as sock, patch(
+            "redirect.ssl.create_default_context"
+        ) as create_context, patch(
+            "redirect.http.client.HTTPSConnection"
+        ) as connection:
+            response = connection.return_value.getresponse.return_value
+            response.status = 200
+            response.getheader.return_value = None
+            create_context.return_value.wrap_socket.return_value = object()
+
+            _head("https://public.example/login", timeout=2)
+
+        getaddrinfo.assert_called_once()
+        sock.return_value.connect.assert_called_once_with(("8.8.8.8", 443))
+        create_context.return_value.wrap_socket.assert_called_once_with(
+            sock.return_value, server_hostname="public.example"
+        )
+
+    def test_mixed_public_and_private_dns_results_are_rejected(self):
+        with patch(
+            "redirect.socket.getaddrinfo",
+            return_value=[
+                (2, 1, 6, "", ("8.8.8.8", 443)),
+                (2, 1, 6, "", ("127.0.0.1", 443)),
+            ],
+        ):
+            with self.assertRaises(ValueError):
+                _resolve_public_addresses("rebinding.example", None, "https")
 
     def test_blocked_target_degrades_to_a_chain_error_not_a_crash(self):
         result = follow_redirects("http://127.0.0.1/admin", timeout=1)

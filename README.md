@@ -261,8 +261,11 @@ curl -X POST http://127.0.0.1:8765/v1/email \
 The server binds to `127.0.0.1` by default and has no authentication of its
 own — only pass `--host` to expose it more broadly if you put it behind your
 own network controls and authentication. `POST /v1/*` is rate-limited per
-client IP (`--rate-limit`, default 30 requests/60s; pass `0` to disable for
-local development) as a basic safeguard if you do expose it publicly.
+client IP (`--rate-limit`, default 30 requests/60s; pass `0` to disable) as
+a basic safeguard when clients connect directly. Disable this built-in
+limiter behind a reverse proxy unless you have a trusted-client-IP strategy;
+otherwise every visitor may share the proxy address and one visitor can
+throttle everyone.
 `render.yaml` in the repo root is a ready-to-use [Render](https://render.com)
 Blueprint if you want to self-host it; any host that can run a long-lived
 Python process works the same way, with no database or persistent state to

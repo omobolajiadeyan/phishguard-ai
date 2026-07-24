@@ -35,30 +35,49 @@ def _is_blocked_ip(ip_str: str) -> bool:
     )
 
 
-def _is_public_host(hostname: str, port: int | None, scheme: str) -> bool:
-    """True when *hostname* resolves only to public, routable addresses.
+def _resolve_public_addresses(
+    hostname: str, port: int | None, scheme: str
+) -> list[tuple[int, int, int, tuple]]:
+    """Resolve *hostname* once and return its public, routable addresses.
 
     The redirect tracer is reachable from an untrusted network caller via
     ``phishguard serve``, so every hop's destination — not just the URL a
     caller typed in directly — must be checked before connecting; otherwise
     a redirect chain could be used to make this process issue requests to
     internal services on the caller's behalf (SSRF), including the
-    169.254.169.254 cloud metadata endpoint. This is a pre-flight DNS
-    check, not a guarantee against DNS rebinding between check and
-    connect; closing that narrow gap would require connecting to the
-    resolved IP directly, which breaks Host-header/SNI-based routing for
-    the (common) legitimate case of tracing real redirect chains.
+    169.254.169.254 cloud metadata endpoint. The returned addresses are
+    connected to directly while the original hostname remains in the HTTP
+    Host header and TLS SNI. Validation and connection therefore use the
+    same DNS result, closing the DNS-rebinding gap without breaking
+    name-based virtual hosting.
     """
     if hostname.lower() in _BLOCKED_HOSTNAMES:
-        return False
+        raise ValueError(f"Refusing blocked hostname: {hostname}")
 
     default_port = 443 if scheme == "https" else 80
-    try:
-        results = socket.getaddrinfo(hostname, port or default_port, proto=socket.IPPROTO_TCP)
-    except OSError:
-        return False
+    results = socket.getaddrinfo(
+        hostname,
+        port or default_port,
+        type=socket.SOCK_STREAM,
+        proto=socket.IPPROTO_TCP,
+    )
+    if not results:
+        raise OSError(f"No addresses found for {hostname}")
+    if any(_is_blocked_ip(sockaddr[0]) for *_rest, sockaddr in results):
+        raise ValueError(f"Refusing private or internal address for {hostname}")
+    return [
+        (family, socktype, proto, sockaddr)
+        for family, socktype, proto, _canonname, sockaddr in results
+    ]
 
-    return not any(_is_blocked_ip(sockaddr[0]) for *_rest, sockaddr in results)
+
+def _is_public_host(hostname: str, port: int | None, scheme: str) -> bool:
+    """True when a host resolves exclusively to public addresses."""
+    try:
+        _resolve_public_addresses(hostname, port, scheme)
+    except (OSError, ValueError):
+        return False
+    return True
 
 
 def _domain(url: str) -> str:
@@ -100,28 +119,42 @@ def _head(url: str, timeout: int) -> tuple[int, str | None]:
     if parsed.query:
         path = f"{path}?{parsed.query}"
 
-    if not _is_public_host(hostname, port, parsed.scheme):
+    try:
+        addresses = _resolve_public_addresses(hostname, port, parsed.scheme)
+    except (OSError, ValueError) as exc:
         raise ValueError(
             f"Refusing to fetch a redirect target that resolves to a "
             f"private or internal address: {hostname}"
-        )
+        ) from exc
 
     headers = {"User-Agent": _USER_AGENT, "Connection": "close"}
 
-    if parsed.scheme == "https":
-        ctx = ssl.create_default_context()
-        conn: http.client.HTTPConnection = http.client.HTTPSConnection(
-            hostname, port=port, timeout=timeout, context=ctx
-        )
-    else:
-        conn = http.client.HTTPConnection(hostname, port=port, timeout=timeout)
+    last_error: OSError | None = None
+    for family, socktype, proto, sockaddr in addresses:
+        if parsed.scheme == "https":
+            ctx = ssl.create_default_context()
+            conn: http.client.HTTPConnection = http.client.HTTPSConnection(
+                hostname, port=port, timeout=timeout, context=ctx
+            )
+        else:
+            conn = http.client.HTTPConnection(hostname, port=port, timeout=timeout)
 
-    try:
-        conn.request("HEAD", path, headers=headers)
-        resp = conn.getresponse()
-        return resp.status, resp.getheader("Location")
-    finally:
-        conn.close()
+        raw_sock = socket.socket(family, socktype, proto)
+        raw_sock.settimeout(timeout)
+        try:
+            raw_sock.connect(sockaddr)
+            conn.sock = raw_sock
+            if parsed.scheme == "https":
+                conn.sock = ctx.wrap_socket(raw_sock, server_hostname=hostname)
+            conn.request("HEAD", path, headers=headers)
+            resp = conn.getresponse()
+            return resp.status, resp.getheader("Location")
+        except OSError as exc:
+            last_error = exc
+        finally:
+            conn.close()
+
+    raise last_error or OSError(f"Could not connect to {hostname}")
 
 
 def follow_redirects(

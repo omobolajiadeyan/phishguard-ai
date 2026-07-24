@@ -50,6 +50,7 @@ URL_CASES = [
     "http://a@b@evil.com/",
     "https://exa mple.com/path",
     "\t\thttps://example.com/path",
+    "https://example.com/verify/😀",
 ]
 
 EMAIL_CASES = [
@@ -68,6 +69,7 @@ EMAIL_CASES = [
         "Someone requested a password reset. If this wasn't you, ignore this email.",
         "mx.example; spf=pass; dkim=pass; dmarc=pass",
     ),
+    ("Hello 😀", "A Unicode parity fixture.", None),
 ]
 
 
@@ -104,7 +106,8 @@ class JsPortParityTests(unittest.TestCase):
         cls.js_results = _run_js({"urls": URL_CASES, "emails": EMAIL_CASES})
 
     def test_url_scoring_matches_python(self):
-        for url, js_result in zip(URL_CASES, self.js_results["urls"]):
+        self.assertEqual(len(self.js_results["urls"]), len(URL_CASES))
+        for url, js_result in zip(URL_CASES, self.js_results["urls"], strict=True):
             with self.subTest(url=url):
                 py_probability, py_features = score_url(url)
                 py_verdict = classify(py_probability)
@@ -116,8 +119,12 @@ class JsPortParityTests(unittest.TestCase):
                 self.assertEqual(
                     js_result["verdict"], py_verdict, msg=f"verdict mismatch for {url!r}"
                 )
+                self.assertEqual(
+                    set(js_result["features"]),
+                    set(py_features),
+                    msg=f"feature keys mismatch for {url!r}",
+                )
                 for key, py_value in py_features.items():
-                    self.assertIn(key, js_result["features"], msg=f"missing feature {key!r} for {url!r}")
                     js_value = js_result["features"][key]
                     if isinstance(py_value, float):
                         self.assertAlmostEqual(
@@ -130,7 +137,10 @@ class JsPortParityTests(unittest.TestCase):
                         )
 
     def test_email_scoring_matches_python(self):
-        for (subject, body, auth), js_result in zip(EMAIL_CASES, self.js_results["emails"]):
+        self.assertEqual(len(self.js_results["emails"]), len(EMAIL_CASES))
+        for (subject, body, auth), js_result in zip(
+            EMAIL_CASES, self.js_results["emails"], strict=True
+        ):
             with self.subTest(subject=subject):
                 py_probability, py_features = score_email(subject, body, authentication_results=auth)
                 py_verdict = classify(py_probability)
@@ -142,8 +152,12 @@ class JsPortParityTests(unittest.TestCase):
                 self.assertEqual(
                     js_result["verdict"], py_verdict, msg=f"verdict mismatch for {subject!r}"
                 )
+                self.assertEqual(
+                    set(js_result["features"]),
+                    set(py_features),
+                    msg=f"feature keys mismatch for {subject!r}",
+                )
                 for key, py_value in py_features.items():
-                    self.assertIn(key, js_result["features"], msg=f"missing feature {key!r} for {subject!r}")
                     js_value = js_result["features"][key]
                     if isinstance(py_value, float):
                         self.assertAlmostEqual(
