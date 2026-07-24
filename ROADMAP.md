@@ -30,9 +30,20 @@ tracked in GitHub issues so contributors can discuss and claim scoped tasks.
 - Plain ASCII output mode contributed by BeauDevCode
 - Versioned wheel and source releases with checksums and build provenance
 
+## Recently Shipped (Unreleased)
+
+- **`serve` REST API mode** — stdlib-only HTTP server exposing `/healthz`,
+  `/v1/url`, and `/v1/email` for SIEM and proxy integrations, with no new
+  runtime dependencies
+- **Fully static browser demo** — `web/` scores URLs and email entirely
+  client-side (`scoring.js`, a Python-parity-verified JS port of the
+  model), deployable to GitHub Pages with no backend to run; `phishguard
+  serve` also serves the same UI at `/` with redirect-chain resolution on
+  top, plus per-IP rate limiting on `POST /v1/*` and a `render.yaml`
+  deployment blueprint for self-hosting the full server
+
 ## Next
 
-- REST API / `--serve` mode for SIEM and proxy integrations
 - Improve public benchmark recall while preserving false-positive discipline
   (#46)
 - Expand the benchmark with public-data provenance (#18)

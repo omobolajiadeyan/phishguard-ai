@@ -4,6 +4,30 @@ All notable changes to PhishGuard AI are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **`phishguard serve` REST API mode** for SIEM and proxy integrations that
+  want a long-running scoring endpoint instead of shelling out to the CLI per
+  lookup. Built on the standard-library `http.server`, so it adds no runtime
+  dependencies. Exposes `GET /healthz`, `POST /v1/url` (with optional
+  `follow_redirects`), and `POST /v1/email`. Binds to `127.0.0.1` by default;
+  see the README's REST API Server section for the security note on `--host`.
+- **Browser demo UI** (`web/`, vanilla JS, no build step, no new
+  dependencies) — paste a URL or email and get a verdict with a feature
+  breakdown. Scoring runs entirely client-side via `web/scoring.js`, a
+  JavaScript port of the Python model verified against the original by
+  `tests/test_js_parity.py`, so the demo works as a static page with no
+  backend to run: open `web/index.html` directly, or host it anywhere
+  static files are served (e.g. GitHub Pages via
+  `.github/workflows/pages.yml`). `phishguard serve` also serves the same
+  UI at `/`, where it additionally gets redirect-chain resolution, which
+  needs a real server-side request the static version can't make.
+  `render.yaml` provides a one-click Render blueprint for self-hosting the
+  full server.
+- **Per-IP rate limiting on `POST /v1/*`** (`--rate-limit` / `--rate-limit-window`,
+  default 30 requests/60s, `0` disables it), a basic safeguard for anyone
+  running `serve` somewhere publicly reachable.
+
 ### Fixed
 
 - **Saved-email analysis no longer trusts embedded authentication results by
