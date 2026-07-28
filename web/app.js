@@ -56,11 +56,19 @@ const FEATURE_LABELS = {
 const BOOLEAN_FEATURES = new Set([
   "has_ip_address", "has_https", "suspicious_tld", "has_port",
   "has_punycode", "has_unicode_hostname", "has_opaque_hostname_label",
-  "has_attachment_mention",
+  "has_attachment_mention", "redirect_crossed_domain",
 ]);
 
 function formatFeatureName(name) {
   return FEATURE_LABELS[name] || name;
+}
+
+const PREFERS_REDUCED_MOTION = window.matchMedia
+  ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  : false;
+
+function scrollIntoViewRespectingMotion(el) {
+  el.scrollIntoView({ behavior: PREFERS_REDUCED_MOTION ? "auto" : "smooth", block: "nearest" });
 }
 
 function formatFeatureValue(name, value) {
@@ -121,7 +129,7 @@ function showError(message) {
   clearResult();
   errorEl.textContent = message;
   errorEl.classList.remove("hidden");
-  errorEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  scrollIntoViewRespectingMotion(errorEl);
 }
 
 function renderFeatures(features) {
@@ -153,7 +161,7 @@ function renderResult({ probability, features }) {
 
   renderFeatures(features || {});
   resultEl.classList.remove("hidden");
-  resultEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  scrollIntoViewRespectingMotion(resultEl);
 }
 
 document.getElementById("url-form").addEventListener("submit", (event) => {
