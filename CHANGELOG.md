@@ -6,6 +6,14 @@ All notable changes to PhishGuard AI are documented here.
 
 ### Added
 
+- **`on_free_hosting_platform` feature** — detects subdomains of commonly
+  abused free-hosting platforms (pages.dev, netlify.app, blogspot.com,
+  github.io, etc.). Added after a live-traffic validation against 300 real
+  OpenPhish URLs and 1,000 real Tranco top-1000 domains found this was the
+  single largest recall gap (32% of missed real phishing was on these
+  platforms). Recall improved 46.7%→63.3% (strict PHISHING-only:
+  24.0%→51.0%) with 0 new false positives. See `docs/BENCHMARK.md`'s
+  "Live-Traffic Validation" section and `tools/evaluate_live_traffic_benchmark.py`.
 - **`phishguard serve` REST API mode** for SIEM and proxy integrations that
   want a long-running scoring endpoint instead of shelling out to the CLI per
   lookup. Built on the standard-library `http.server`, so it adds no runtime

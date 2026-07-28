@@ -4,6 +4,7 @@ from features import (
     has_opaque_hostname_label,
     has_punycode,
     has_unicode_hostname,
+    on_free_hosting_platform,
 )
 
 
@@ -39,6 +40,28 @@ class OpaqueHostnameFeatureTests(unittest.TestCase):
 
     def test_ignores_punycode_hostname_labels(self):
         self.assertEqual(has_opaque_hostname_label("https://xn--bcher-kva.example/catalog"), 0)
+
+
+class FreeHostingPlatformFeatureTests(unittest.TestCase):
+    # Synthetic examples only -- these are not real registered phishing
+    # pages. Added 2026-07-28 after a live-traffic validation (see
+    # docs/BENCHMARK.md) found 32% of missed real phishing URLs were hosted
+    # on platforms exactly like these.
+    def test_detects_known_free_hosting_subdomains(self):
+        self.assertEqual(on_free_hosting_platform("https://mybank-verify.pages.dev/"), 1)
+        self.assertEqual(on_free_hosting_platform("https://secure-login.netlify.app/"), 1)
+        self.assertEqual(on_free_hosting_platform("https://account-update.blogspot.com/"), 1)
+        self.assertEqual(on_free_hosting_platform("https://someuser.github.io/portfolio"), 1)
+
+    def test_ignores_the_platforms_own_root_domain(self):
+        # Visiting the platform itself is not the same as a phishing page
+        # hosted as a subdomain of it.
+        self.assertEqual(on_free_hosting_platform("https://vercel.app/"), 0)
+        self.assertEqual(on_free_hosting_platform("https://github.io/"), 0)
+
+    def test_ignores_ordinary_production_domains(self):
+        self.assertEqual(on_free_hosting_platform("https://example.com/"), 0)
+        self.assertEqual(on_free_hosting_platform("https://chase.com/login"), 0)
 
 
 if __name__ == "__main__":

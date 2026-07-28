@@ -52,6 +52,8 @@ URL_CASES = [
     "https://exa mple.com/path",
     "\t\thttps://example.com/path",
     "https://example.com/verify/😀",
+    "https://mybank-verify.pages.dev/",
+    "https://vercel.app/",
 ]
 
 EMAIL_CASES = [
