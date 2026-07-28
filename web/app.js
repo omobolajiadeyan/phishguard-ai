@@ -16,22 +16,90 @@ const VERDICT_CLASS = {
   SAFE: "verdict-safe",
 };
 
+// Human-readable labels for the raw model feature keys, so the "feature
+// breakdown" table reads as an explanation rather than a variable dump.
+const FEATURE_LABELS = {
+  url_length: "URL length",
+  subdomain_count: "Subdomain count",
+  has_ip_address: "Uses a raw IP address",
+  special_char_count: "Special character count",
+  has_https: "Uses HTTPS",
+  digit_ratio: "Digit ratio",
+  phishing_keywords: "Phishing keyword matches",
+  path_depth: "Path depth",
+  suspicious_tld: "Suspicious top-level domain",
+  domain_length: "Domain name length",
+  url_entropy: "Hostname randomness (entropy)",
+  has_port: "Uses a non-default port",
+  has_punycode: "Uses punycode encoding",
+  has_unicode_hostname: "Uses non-ASCII hostname characters",
+  has_opaque_hostname_label: "Opaque/high-entropy hostname label",
+  typosquatting_score: "Typosquatting similarity score",
+  redirect_crossed_domain: "Redirect crossed to a new domain",
+  redirect_hops: "Redirect hop count",
+  url_count: "Links in message",
+  link_count: "Link-like phrases",
+  urgency_word_count: "Urgency word matches",
+  exclamation_count: "Exclamation marks",
+  all_caps_word_count: "ALL-CAPS words",
+  html_tag_count: "HTML tags in body",
+  has_attachment_mention: "Mentions an attachment/download",
+  word_count: "Word count",
+  spf_result: "SPF result",
+  dkim_result: "DKIM result",
+  dmarc_result: "DMARC result",
+  spf_auth_risk: "SPF failure risk",
+  dkim_auth_risk: "DKIM failure risk",
+  dmarc_auth_risk: "DMARC failure risk",
+};
+
+const BOOLEAN_FEATURES = new Set([
+  "has_ip_address", "has_https", "suspicious_tld", "has_port",
+  "has_punycode", "has_unicode_hostname", "has_opaque_hostname_label",
+  "has_attachment_mention",
+]);
+
+function formatFeatureName(name) {
+  return FEATURE_LABELS[name] || name;
+}
+
+function formatFeatureValue(name, value) {
+  if (BOOLEAN_FEATURES.has(name)) return value ? "Yes" : "No";
+  if (typeof value === "number" && !Number.isInteger(value)) {
+    return (Math.round(value * 1000) / 1000).toString();
+  }
+  return String(value);
+}
+
 const tabs = document.querySelectorAll(".tab");
 const panels = {
   url: document.getElementById("panel-url"),
   email: document.getElementById("panel-email"),
 };
 
-tabs.forEach((tab) => {
-  tab.addEventListener("click", () => {
-    tabs.forEach((t) => {
-      t.classList.toggle("active", t === tab);
-      t.setAttribute("aria-selected", t === tab ? "true" : "false");
-    });
-    Object.entries(panels).forEach(([name, panel]) => {
-      panel.classList.toggle("hidden", name !== tab.dataset.tab);
-    });
-    clearResult();
+function activateTab(tab) {
+  tabs.forEach((t) => {
+    const selected = t === tab;
+    t.classList.toggle("active", selected);
+    t.setAttribute("aria-selected", selected ? "true" : "false");
+    t.tabIndex = selected ? 0 : -1;
+  });
+  Object.entries(panels).forEach(([name, panel]) => {
+    panel.classList.toggle("hidden", name !== tab.dataset.tab);
+  });
+  clearResult();
+}
+
+tabs.forEach((tab, index) => {
+  tab.addEventListener("click", () => activateTab(tab));
+  tab.addEventListener("keydown", (event) => {
+    if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+    event.preventDefault();
+    const next = event.key === "ArrowRight"
+      ? tabs[(index + 1) % tabs.length]
+      : tabs[(index - 1 + tabs.length) % tabs.length];
+    next.focus();
+    activateTab(next);
   });
 });
 
@@ -53,6 +121,7 @@ function showError(message) {
   clearResult();
   errorEl.textContent = message;
   errorEl.classList.remove("hidden");
+  errorEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 function renderFeatures(features) {
@@ -60,9 +129,9 @@ function renderFeatures(features) {
   for (const [name, value] of Object.entries(features)) {
     const row = document.createElement("tr");
     const nameCell = document.createElement("td");
-    nameCell.textContent = name;
+    nameCell.textContent = formatFeatureName(name);
     const valueCell = document.createElement("td");
-    valueCell.textContent = String(value);
+    valueCell.textContent = formatFeatureValue(name, value);
     row.append(nameCell, valueCell);
     featuresTableBody.appendChild(row);
   }
@@ -84,6 +153,7 @@ function renderResult({ probability, features }) {
 
   renderFeatures(features || {});
   resultEl.classList.remove("hidden");
+  resultEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 document.getElementById("url-form").addEventListener("submit", (event) => {
