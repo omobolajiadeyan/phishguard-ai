@@ -5,7 +5,7 @@ PhishGuard AI. Counts are a dated snapshot, not claims of production adoption.
 
 ## Technical Evidence
 
-Snapshot verified on June 9, 2026:
+Snapshot verified on July 28, 2026:
 
 - URL regression fixture: 14 public-safe samples
 - Confusion matrix: 7 true positives, 7 true negatives, 0 false positives,
@@ -15,8 +15,12 @@ Snapshot verified on June 9, 2026:
 - Fixture false-positive rate: 0.000
 - Supported Python versions in CI: 3.10, 3.11, 3.12, and 3.13
 - Security automation: CodeQL, repository policy checks, and dependency audit
-- Release engineering: three tagged releases, with checksums and build
-  provenance on v0.4.0
+- Release engineering: five tagged releases, with installable artifacts,
+  checksums, and build provenance on recent releases
+- Integration surfaces: CLI, stable Python API, GitHub Marketplace Action,
+  SARIF 2.1.0 output, browser demo, and stdlib REST API server mode
+- Trust-boundary coverage: saved-email authentication parsing, SARIF
+  validation, parser regression tests, and public-safe demonstration inputs
 
 Run the benchmark yourself:
 
@@ -28,9 +32,23 @@ These results measure the checked-in regression fixture. They are not
 population-level accuracy, calibration, or production-effectiveness claims.
 See [BENCHMARK.md](BENCHMARK.md) for the fixture limitations.
 
+## Product Readiness Evidence
+
+Recent reviewer-facing improvements:
+
+| Area | Evidence |
+| --- | --- |
+| Benchmark transparency | [BENCHMARK.md](BENCHMARK.md) records the public-safe baseline, recall improvement, and limits. |
+| Python embedding | [PYTHON_API.md](PYTHON_API.md) documents direct `score_url` and `score_email` usage without shelling out. |
+| CI and code scanning | [GITHUB_CODE_SCANNING.md](GITHUB_CODE_SCANNING.md) provides SARIF generation and upload guidance. |
+| REST integration | The README documents `phishguard serve` with local default binding and endpoint examples. |
+| Safe adoption | [ADOPTION.md](ADOPTION.md) and [FIRST_CONTRIBUTION.md](FIRST_CONTRIBUTION.md) give external users low-friction paths to try, report, and contribute. |
+| Evaluator experience | [EVALUATOR_GUIDE.md](EVALUATOR_GUIDE.md) gives a five-minute path to run safe examples and inspect trust boundaries. |
+
 ## Community Evidence
 
-GitHub snapshot verified on June 9, 2026:
+GitHub snapshot verified on June 9, 2026 and retained as a historical
+baseline:
 
 - 3 repository forks
 - 1 merged pull request from an external human contributor

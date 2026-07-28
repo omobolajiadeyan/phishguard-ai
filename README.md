@@ -27,6 +27,21 @@ small, inspectable, and reproducible: standard-library Python, documented
 signals, regression tests, JSON output, and SARIF 2.1.0 for GitHub Code
 Scanning.
 
+## Current Evidence
+
+Recent work shows a broader product surface than a single CLI script:
+
+| Evidence Area | What Reviewers Can Inspect |
+| --- | --- |
+| Detection quality | Public-safe benchmark fixture with dated precision, recall, and false-positive results in [BENCHMARK.md](docs/BENCHMARK.md). |
+| Automation | JSON and SARIF 2.1.0 output for CI, GitHub Code Scanning, and security review workflows. |
+| Integration paths | Stable Python API guide, GitHub Marketplace Action, and `phishguard serve` REST API mode. |
+| Trust boundaries | Conservative email-authentication handling and expanded parser tests for saved-message inputs. |
+| Adoption readiness | Third-party adoption templates, first-contribution guide, release artifacts, checksums, and public demo evidence. |
+
+See [Project Evidence](docs/PROJECT_EVIDENCE.md) for the dated evidence record
+and exact reproduction commands.
+
 ## Why People Use It
 
 - **Explainable by default:** each result includes the URL, verdict, risk score,
@@ -98,9 +113,9 @@ inspect output, and understand the trust boundaries before judging the project.
 
 ![PhishGuard safe-input and phishing-input terminal comparison](docs/assets/phishguard-demo.svg)
 
-See [Project Evidence](docs/PROJECT_EVIDENCE.md) for dated benchmark results,
-release and contribution evidence, a reproducible demonstration, and explicit
-limits on what the current metrics establish.
+The terminal evidence above uses only public-safe inputs (`example.com` and
+the TEST-NET-1 documentation range), so reviewers can reproduce the result
+without touching live phishing infrastructure.
 See [Public Evidence and Adoption](docs/PUBLIC_EVIDENCE.md) for the current
 Marketplace, release, benchmark, and contributor evidence narrative.
 [Watch the 18-second safe demo video](https://github.com/omobolajiadeyan/phishguard-ai/releases/download/v0.4.0/phishguard-demo.mp4).
