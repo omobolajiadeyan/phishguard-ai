@@ -16,6 +16,7 @@ const currentUrlEl = document.getElementById("current-url");
 const scanCurrentButton = document.getElementById("scan-current");
 const manualForm = document.getElementById("manual-form");
 const manualUrlInput = document.getElementById("manual-url");
+const sampleButtons = document.querySelectorAll(".sample-button");
 const resultEl = document.getElementById("result");
 const errorEl = document.getElementById("error");
 const verdictEl = document.getElementById("verdict");
@@ -23,6 +24,7 @@ const scoreEl = document.getElementById("score");
 const guidanceEl = document.getElementById("guidance");
 const barFillEl = document.getElementById("bar-fill");
 const featuresEl = document.getElementById("features");
+const modeLabelEl = document.getElementById("mode-label");
 
 let activeTabUrl = "";
 
@@ -35,6 +37,16 @@ function showError(message) {
   resultEl.classList.add("hidden");
   errorEl.textContent = message;
   errorEl.classList.remove("hidden");
+}
+
+function normalizeUrlInput(value) {
+  const candidate = String(value || "").trim();
+  if (!candidate) return "";
+  if (/^https?:\/\//i.test(candidate)) return candidate;
+  if (/^[a-z0-9.-]+\.[a-z]{2,}(?::\d+)?(?:[/?#].*)?$/i.test(candidate)) {
+    return `https://${candidate}`;
+  }
+  return candidate;
 }
 
 function normalizeForDisplay(url) {
@@ -81,13 +93,13 @@ function renderResult(url) {
 }
 
 function scanUrl(url) {
-  const candidate = String(url || "").trim();
+  const candidate = normalizeUrlInput(url);
   if (!candidate) {
     showError("Paste a URL or open a normal web page first.");
     return;
   }
   if (!/^https?:\/\//i.test(candidate)) {
-    showError("PhishGuard currently checks http:// and https:// URLs.");
+    showError("Enter a web URL, for example www.yahoo.com or https://example.com.");
     return;
   }
   renderResult(candidate);
@@ -95,7 +107,8 @@ function scanUrl(url) {
 
 async function loadCurrentTab() {
   if (typeof chrome === "undefined" || !chrome.tabs || !chrome.tabs.query) {
-    currentUrlEl.textContent = "Current-tab lookup is unavailable in this browser.";
+    currentUrlEl.textContent = "Install as an extension to check the active tab. Paste a URL below to test the scanner here.";
+    modeLabelEl.textContent = "Preview mode";
     scanCurrentButton.disabled = true;
     return;
   }
@@ -111,6 +124,7 @@ async function loadCurrentTab() {
   }
 
   currentUrlEl.textContent = normalizeForDisplay(activeTabUrl);
+  modeLabelEl.textContent = "Extension mode";
   scanCurrentButton.disabled = false;
 }
 
@@ -123,7 +137,15 @@ manualForm.addEventListener("submit", (event) => {
   scanUrl(manualUrlInput.value);
 });
 
+sampleButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    manualUrlInput.value = button.dataset.url || "";
+    scanUrl(manualUrlInput.value);
+  });
+});
+
 loadCurrentTab().catch(() => {
   currentUrlEl.textContent = "Could not read the current tab URL.";
+  modeLabelEl.textContent = "Preview mode";
   scanCurrentButton.disabled = true;
 });

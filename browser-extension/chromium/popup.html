@@ -11,10 +11,16 @@
     <header class="header">
       <div>
         <h1>PhishGuard AI</h1>
-        <p>Offline URL risk check</p>
+        <p>Private phishing-risk check for everyday browsing</p>
       </div>
       <span id="status-dot" class="status-dot" aria-hidden="true"></span>
     </header>
+
+    <section class="summary" aria-label="Privacy and operating mode">
+      <span>Offline scoring</span>
+      <span>No API key</span>
+      <span>No browsing history</span>
+    </section>
 
     <section class="current-tab">
       <span class="label">Current tab</span>
@@ -23,10 +29,14 @@
     </section>
 
     <form id="manual-form" class="manual">
-      <label for="manual-url">Or paste a URL</label>
+      <label for="manual-url">Paste or type a URL</label>
       <div class="input-row">
-        <input id="manual-url" name="url" type="url" placeholder="https://example.com/account" autocomplete="off" />
+        <input id="manual-url" name="url" type="text" inputmode="url" placeholder="www.yahoo.com" autocomplete="off" />
         <button type="submit">Check</button>
+      </div>
+      <div class="sample-row" aria-label="Sample URLs">
+        <button type="button" class="sample-button" data-url="www.yahoo.com">Try Yahoo</button>
+        <button type="button" class="sample-button" data-url="http://192.0.2.10/secure-login/verify">Try risky sample</button>
       </div>
     </form>
 
@@ -47,7 +57,7 @@
 
     <footer>
       <a href="https://github.com/omobolajiadeyan/phishguard-ai" target="_blank" rel="noopener">Project evidence</a>
-      <span>No API key. No lookup server.</span>
+      <span id="mode-label">Extension-ready prototype</span>
     </footer>
   </main>
 
