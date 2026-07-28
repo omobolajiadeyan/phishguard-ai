@@ -21,6 +21,7 @@ const PhishGuardScoring = (() => {
   ];
 
   const SUSPICIOUS_TLDS = [".xyz", ".top", ".click", ".tk", ".ml", ".ga", ".cf", ".gq", ".pw"];
+  const COMMON_PRESENTATION_SUBDOMAINS = new Set(["www", "m", "mobile"]);
 
   const TOP_DOMAINS = [
     "google.com", "facebook.com", "amazon.com", "apple.com", "microsoft.com",
@@ -120,8 +121,10 @@ const PhishGuardScoring = (() => {
 
   function subdomainCount(url) {
     const hostname = safeHostname(url);
-    const parts = hostname ? hostname.split(".") : [];
-    return Math.max(0, parts.length - 2);
+    const parts = hostname ? hostname.toLowerCase().split(".").filter((p) => p.length > 0) : [];
+    if (parts.length <= 2) return 0;
+    const subdomains = parts.slice(0, -2);
+    return subdomains.filter((part) => !COMMON_PRESENTATION_SUBDOMAINS.has(part)).length;
   }
 
   const IP_PATTERN = /(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)/;

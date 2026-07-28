@@ -212,7 +212,7 @@ input:focus {
 
 .verdict-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 10px;
@@ -227,6 +227,14 @@ input:focus {
 
 .score {
   color: #334155;
+  font-weight: 800;
+}
+
+.risk-label {
+  display: block;
+  margin-top: 6px;
+  color: #475569;
+  font-size: 13px;
   font-weight: 800;
 }
 

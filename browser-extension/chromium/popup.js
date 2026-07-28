@@ -20,6 +20,7 @@ const sampleButtons = document.querySelectorAll(".sample-button");
 const resultEl = document.getElementById("result");
 const errorEl = document.getElementById("error");
 const verdictEl = document.getElementById("verdict");
+const riskLabelEl = document.getElementById("risk-label");
 const scoreEl = document.getElementById("score");
 const guidanceEl = document.getElementById("guidance");
 const barFillEl = document.getElementById("bar-fill");
@@ -83,7 +84,8 @@ function renderResult(url) {
 
   verdictEl.textContent = verdict;
   verdictEl.className = `verdict ${className}`;
-  scoreEl.textContent = `${pct}%`;
+  riskLabelEl.textContent = verdict === "SAFE" ? "Low phishing risk" : "Phishing-risk warning";
+  scoreEl.textContent = `${pct}% phishing risk`;
   barFillEl.style.width = `${Math.min(100, Math.max(0, pct))}%`;
   barFillEl.className = `bar-fill ${className}`;
   guidanceEl.textContent = GUIDANCE_BY_VERDICT[verdict] || GUIDANCE_BY_VERDICT.SUSPICIOUS;

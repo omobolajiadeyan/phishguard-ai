@@ -19,6 +19,7 @@ PHISHING_KEYWORDS = [
 
 TRUSTED_TLDS = {".com", ".org", ".gov", ".edu", ".co.uk", ".net"}
 SUSPICIOUS_TLDS = {".xyz", ".top", ".click", ".tk", ".ml", ".ga", ".cf", ".gq", ".pw"}
+COMMON_PRESENTATION_SUBDOMAINS = {"www", "m", "mobile"}
 
 # Well-known domains used as typosquatting reference targets.
 # Domains that are edit-distance 1 or 2 from any entry are flagged.
@@ -47,8 +48,15 @@ def url_length(url: str) -> int:
 def subdomain_count(url: str) -> int:
     try:
         hostname = urlparse(url).hostname or ""
-        parts = hostname.split(".")
-        return max(0, len(parts) - 2)
+        parts = [part for part in hostname.lower().split(".") if part]
+        if len(parts) <= 2:
+            return 0
+        subdomains = parts[:-2]
+        meaningful = [
+            part for part in subdomains
+            if part not in COMMON_PRESENTATION_SUBDOMAINS
+        ]
+        return len(meaningful)
     except Exception:
         return 0
 

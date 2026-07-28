@@ -23,6 +23,7 @@ SCORING_JS = ROOT / "web" / "scoring.js"
 
 URL_CASES = [
     "https://www.google.com/search?q=test",
+    "https://www.yahoo.com",
     "http://paypa1-secure-login.xyz/verify",
     "https://bit.ly/abc123",
     "http://192.168.1.1/login",
