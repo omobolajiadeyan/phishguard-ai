@@ -35,7 +35,7 @@ Recent work shows a broader product surface than a single CLI script:
 | --- | --- |
 | Detection quality | Public-safe benchmark fixture with dated precision, recall, and false-positive results in [BENCHMARK.md](docs/BENCHMARK.md). |
 | Automation | JSON and SARIF 2.1.0 output for CI, GitHub Code Scanning, and security review workflows. |
-| Integration paths | Stable Python API guide, GitHub Marketplace Action, and `phishguard serve` REST API mode. |
+| Integration paths | Stable Python API guide, GitHub Marketplace Action, browser extension prototype, and `phishguard serve` REST API mode. |
 | Trust boundaries | Conservative email-authentication handling and expanded parser tests for saved-message inputs. |
 | Adoption readiness | Third-party adoption templates, first-contribution guide, release artifacts, checksums, and public demo evidence. |
 
@@ -247,6 +247,19 @@ dependencies, deployable anywhere static files can be served (GitHub Pages,
 etc.).
 
 Open `web/index.html` directly, or serve the repo locally, to try it.
+
+## Browser Extension
+
+`browser-extension/chromium/` is an unpacked Chrome/Edge extension prototype
+for everyday use. Open a page, click the PhishGuard AI extension icon, and
+check the current tab URL with the same offline JavaScript scoring model used
+by the browser demo. Users can also paste a URL into the popup before visiting
+it.
+
+The extension does not request browsing history, does not scan in the
+background, and does not call a lookup server. See the
+[browser extension guide](docs/BROWSER_EXTENSION.md) for local install steps
+and current limits.
 
 ## REST API Server
 

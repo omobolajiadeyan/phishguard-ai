@@ -18,7 +18,8 @@ Snapshot verified on July 28, 2026:
 - Release engineering: five tagged releases, with installable artifacts,
   checksums, and build provenance on recent releases
 - Integration surfaces: CLI, stable Python API, GitHub Marketplace Action,
-  SARIF 2.1.0 output, browser demo, and stdlib REST API server mode
+  SARIF 2.1.0 output, browser demo, browser extension prototype, and stdlib
+  REST API server mode
 - Trust-boundary coverage: saved-email authentication parsing, SARIF
   validation, parser regression tests, and public-safe demonstration inputs
 
@@ -41,6 +42,7 @@ Recent reviewer-facing improvements:
 | Benchmark transparency | [BENCHMARK.md](BENCHMARK.md) records the public-safe baseline, recall improvement, and limits. |
 | Python embedding | [PYTHON_API.md](PYTHON_API.md) documents direct `score_url` and `score_email` usage without shelling out. |
 | CI and code scanning | [GITHUB_CODE_SCANNING.md](GITHUB_CODE_SCANNING.md) provides SARIF generation and upload guidance. |
+| Browser use | [BROWSER_EXTENSION.md](BROWSER_EXTENSION.md) documents the unpacked Chrome/Edge extension for current-tab and pasted-URL checks. |
 | REST integration | The README documents `phishguard serve` with local default binding and endpoint examples. |
 | Safe adoption | [ADOPTION.md](ADOPTION.md) and [FIRST_CONTRIBUTION.md](FIRST_CONTRIBUTION.md) give external users low-friction paths to try, report, and contribute. |
 | Evaluator experience | [EVALUATOR_GUIDE.md](EVALUATOR_GUIDE.md) gives a five-minute path to run safe examples and inspect trust boundaries. |
