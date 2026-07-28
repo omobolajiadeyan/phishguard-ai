@@ -92,6 +92,10 @@ The [one-minute demo](docs/QUICK_DEMO.md) compares legitimate and suspicious
 inputs, displays the explainable feature breakdown, and exports a finding
 without using live phishing infrastructure.
 
+External reviewers can follow the
+[five-minute evaluator guide](docs/EVALUATOR_GUIDE.md) to run safe examples,
+inspect output, and understand the trust boundaries before judging the project.
+
 ![PhishGuard safe-input and phishing-input terminal comparison](docs/assets/phishguard-demo.svg)
 
 See [Project Evidence](docs/PROJECT_EVIDENCE.md) for dated benchmark results,
