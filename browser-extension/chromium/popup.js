@@ -125,6 +125,7 @@ async function loadCurrentTab() {
 
   if (!activeTabUrl || !/^https?:\/\//i.test(activeTabUrl)) {
     currentUrlEl.textContent = "Open an http:// or https:// page to scan the current tab.";
+    modeLabelEl.textContent = "Extension mode";
     scanCurrentButton.disabled = true;
     return;
   }
