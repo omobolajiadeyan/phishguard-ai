@@ -7,6 +7,7 @@ class UrlScoringTests(unittest.TestCase):
     def test_known_legitimate_urls_are_safe(self):
         urls = (
             "https://www.google.com",
+            "https://www.yahoo.com",
             "https://github.com/omobolajiadeyan",
             "https://www.bbc.co.uk/news",
             "https://stackoverflow.com/questions",
@@ -16,6 +17,18 @@ class UrlScoringTests(unittest.TestCase):
             with self.subTest(url=url):
                 probability, _ = score_url(url)
                 self.assertEqual(classify(probability), "SAFE")
+
+    def test_common_presentation_subdomains_do_not_add_risk(self):
+        root_probability, root_features = score_url("https://yahoo.com")
+        www_probability, www_features = score_url("https://www.yahoo.com")
+
+        self.assertEqual(www_features["subdomain_count"], 0)
+        self.assertEqual(root_features["subdomain_count"], 0)
+        self.assertLessEqual(www_probability, 0.12)
+        # Adding "www." shouldn't meaningfully change the risk score (some
+        # small drift is expected from the extra 4 characters feeding into
+        # length/entropy-based features).
+        self.assertAlmostEqual(www_probability, root_probability, delta=0.03)
 
     def test_obvious_phishing_urls_are_phishing(self):
         urls = (

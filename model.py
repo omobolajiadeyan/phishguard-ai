@@ -29,6 +29,7 @@ URL_WEIGHTS = {
     "has_unicode_hostname":  0.08,   # legitimate IDNs exist; keep weight modest
     "has_opaque_hostname_label": 0.90, # long compact labels can indicate generated hosts
     "typosquatting_score":   0.85,   # close edit-distance match to a known brand
+    "on_free_hosting_platform": 0.70, # disposable free-hosting subdomain (pages.dev, netlify.app, etc.)
     # redirect chain features — only present when --follow-redirects is used
     "redirect_crossed_domain": 0.65, # chain left the original domain
     "redirect_hops":           0.05, # each hop adds marginal suspicion

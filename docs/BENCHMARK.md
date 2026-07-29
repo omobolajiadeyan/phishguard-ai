@@ -145,3 +145,76 @@ inputs. The `.example` suffix alone is not treated as malicious, and this
 fixture-scoped signal avoids applying the same weight to ordinary long
 production domains. These remain regression-fixture numbers and must not be
 described as population-level accuracy or production effectiveness.
+
+## Live-Traffic Validation (2026-07-28)
+
+The fixtures above are small (10-16 samples) and explicitly not
+population-representative. To get a real read on production effectiveness,
+PhishGuard was evaluated against two external, currently-live sources using
+`tools/evaluate_live_traffic_benchmark.py` (raw files are not committed here —
+see that tool's docstring for why, and rerun it yourself with freshly
+downloaded copies to reproduce):
+
+- **300 phishing URLs**: the free feed at
+  [openphish.com/feed.txt](https://openphish.com/feed.txt) — OpenPhish's
+  publicly listed, currently-verified-live phishing URLs at retrieval time.
+- **1,000 legitimate domains**: the top 1,000 entries of the
+  [Tranco list](https://tranco-list.eu/) (a research-grade site-popularity
+  ranking; short URLs were synthesized as `https://<domain>/`).
+
+Only the URL/domain strings were scored — no page content was fetched and no
+network request was made to any listed site, consistent with PhishGuard's
+offline design.
+
+**Baseline (before this validation pass):**
+
+| Metric | Value |
+|---|---|
+| Recall (flag = PHISHING or SUSPICIOUS) | 140/300 = 46.7% |
+| Recall (strict PHISHING only) | 72/300 = 24.0% |
+| False positives on real legitimate sites | 0/1000 |
+
+Zero false positives against 1,000 real top-ranked sites is a genuinely good
+result. But missing more than half of currently-live phishing URLs is the
+real, data-backed version of "this doesn't feel useful yet" — not a vague
+impression, a measured gap.
+
+**Root cause, quantified:** of the 160 missed phishing URLs, 76% were bare
+root URLs with no path (all phishing signal lives in page content, invisible
+to URL-only scoring — a structural limit, not a quick fix) and 32% were
+hosted on free/throwaway platforms (`pages.dev`, `netlify.app`,
+`blogspot.com`, etc.) that had zero penalty in the feature set.
+
+**Fix:** added `on_free_hosting_platform` (see `features.py`), weighted at
+0.70 (matching `suspicious_tld`, chosen because it hit the plateau of
+benefit across weights 0.0-0.9 with zero new false positives at every step
+tested). Mirrored to both JS ports (`web/scoring.js`,
+`browser-extension/chromium/scoring.js`) to preserve parity.
+
+**Result after the fix:**
+
+| Metric | Before | After |
+|---|---|---|
+| Recall (flag = PHISHING or SUSPICIOUS) | 46.7% | **63.3%** |
+| Recall (strict PHISHING only) | 24.0% | **51.0%** |
+| False positives on real legitimate sites | 0/1000 | **0/1000** |
+
+**What this doesn't fix:** the 76%-are-bare-root-URLs gap is untouched — no
+URL-string feature can see phishing content that only exists on the page
+itself. Closing that gap for real would mean adding domain-age/WHOIS lookups,
+certificate-transparency checks, or actual page-content analysis — all of
+which trade away the current "fully offline, zero network calls" design.
+That's a real product decision to make deliberately, not a bug to quietly
+patch around.
+
+Rerun this validation yourself:
+
+```bash
+curl -sL -o /tmp/feed.txt https://openphish.com/feed.txt
+curl -sL -o /tmp/tranco.zip https://tranco-list.eu/top-1m.csv.zip && unzip -o /tmp/tranco.zip -d /tmp/tranco
+python tools/evaluate_live_traffic_benchmark.py /tmp/feed.txt /tmp/tranco/top-1m.csv
+```
+
+Exact counts will differ on a rerun — both feeds rotate continuously. Rerun
+this periodically (recommended: monthly) rather than treating the numbers
+above as permanent.
