@@ -26,6 +26,12 @@ BLOCKED_SUFFIXES = {
     ".scr",
     ".so",
 }
+ALLOWED_BINARY_PATHS = {
+    "browser-extension/chromium/icons/icon16.png",
+    "browser-extension/chromium/icons/icon32.png",
+    "browser-extension/chromium/icons/icon48.png",
+    "browser-extension/chromium/icons/icon128.png",
+}
 PINNED_ACTION = re.compile(r"^[^@\s]+@[0-9a-fA-F]{40}(?:\s+#.*)?$")
 RISKY_WORKFLOW_PATTERNS = {
     "pull_request_target": re.compile(r"^\s*pull_request_target\s*:", re.MULTILINE),
@@ -70,7 +76,7 @@ def check_files(entries: list[tuple[str, Path]]) -> list[str]:
         data = path.read_bytes()
         if len(data) > MAX_FILE_BYTES:
             errors.append(f"{relative}: file exceeds {MAX_FILE_BYTES} bytes")
-        if b"\0" in data:
+        if b"\0" in data and relative not in ALLOWED_BINARY_PATHS:
             errors.append(f"{relative}: NUL byte indicates binary content")
     return errors
 
