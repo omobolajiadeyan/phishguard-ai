@@ -25,6 +25,10 @@ class UrlScoringTests(unittest.TestCase):
         self.assertEqual(www_features["subdomain_count"], 0)
         self.assertEqual(root_features["subdomain_count"], 0)
         self.assertLessEqual(www_probability, 0.12)
+        # Adding "www." shouldn't meaningfully change the risk score (some
+        # small drift is expected from the extra 4 characters feeding into
+        # length/entropy-based features).
+        self.assertAlmostEqual(www_probability, root_probability, delta=0.03)
 
     def test_obvious_phishing_urls_are_phishing(self):
         urls = (

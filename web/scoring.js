@@ -141,7 +141,9 @@ const PhishGuardScoring = (() => {
   const IP_PATTERN = /(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)/;
 
   function onFreeHostingPlatform(url) {
-    const hostname = safeHostname(url);
+    // A trailing root dot ("pages.dev.") is valid DNS syntax for the same
+    // name but would otherwise slip past a plain endsWith() check.
+    const hostname = safeHostname(url).replace(/\.+$/, "");
     return FREE_HOSTING_SUFFIXES.some((s) => hostname.endsWith("." + s)) ? 1 : 0;
   }
 

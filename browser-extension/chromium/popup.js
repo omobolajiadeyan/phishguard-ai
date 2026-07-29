@@ -104,7 +104,11 @@ function scanUrl(url) {
     showError("Enter a web URL, for example www.yahoo.com or https://example.com.");
     return;
   }
-  renderResult(candidate);
+  try {
+    renderResult(candidate);
+  } catch (err) {
+    showError("Could not analyze that input. Try a different URL.");
+  }
 }
 
 async function loadCurrentTab() {

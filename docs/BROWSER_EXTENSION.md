@@ -34,6 +34,6 @@ use, not only during terminal or CI work.
 
 ## Limits
 
-This prototype does not block navigation, inspect full page content, or follow
+This prototype does not block navigation, inspect full-page content, or follow
 redirect chains. It should be treated as an explainable warning signal, not a
 browser security replacement.

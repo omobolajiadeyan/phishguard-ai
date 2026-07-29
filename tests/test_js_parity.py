@@ -1,9 +1,11 @@
 """
-web/scoring.js is an independent JavaScript port of model.py + features.py +
-email_auth.py, used by the static (no-backend) browser demo. This test runs
-both implementations on the same inputs and fails the suite if they ever
-disagree, so the JS port can't silently drift from the Python original it's
-supposed to mirror.
+web/scoring.js and browser-extension/chromium/scoring.js are both
+independent JavaScript ports of model.py + features.py + email_auth.py --
+the former for the static (no-backend) browser demo, the latter for the
+Chromium extension prototype. This test runs Python and BOTH JS ports on
+the same inputs and fails the suite if any of them disagree, so neither JS
+port can silently drift from the Python original (or from each other)
+without the suite catching it.
 
 Requires `node` on PATH; skipped (not failed) if it isn't available, since
 the Python implementation is authoritative and CI environments without
@@ -19,7 +21,10 @@ from pathlib import Path
 from model import classify, score_email, score_url
 
 ROOT = Path(__file__).resolve().parents[1]
-SCORING_JS = ROOT / "web" / "scoring.js"
+SCORING_JS_PATHS = {
+    "web": ROOT / "web" / "scoring.js",
+    "browser-extension": ROOT / "browser-extension" / "chromium" / "scoring.js",
+}
 
 URL_CASES = [
     "https://www.google.com/search?q=test",
@@ -76,7 +81,7 @@ EMAIL_CASES = [
 ]
 
 
-def _run_js(payload: dict) -> dict:
+def _run_js(payload: dict, script_path: Path) -> dict:
     script = """
       const PhishGuardScoring = require(process.argv[1]);
       const input = JSON.parse(require('fs').readFileSync(0, 'utf-8'));
@@ -92,7 +97,7 @@ def _run_js(payload: dict) -> dict:
       process.stdout.write(JSON.stringify(out));
     """
     result = subprocess.run(
-        ["node", "-e", script, str(SCORING_JS)],
+        ["node", "-e", script, str(script_path)],
         input=json.dumps(payload),
         capture_output=True,
         text=True,
@@ -106,71 +111,80 @@ def _run_js(payload: dict) -> dict:
 class JsPortParityTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.js_results = _run_js({"urls": URL_CASES, "emails": EMAIL_CASES})
+        cls.js_results = {
+            label: _run_js({"urls": URL_CASES, "emails": EMAIL_CASES}, path)
+            for label, path in SCORING_JS_PATHS.items()
+        }
 
     def test_url_scoring_matches_python(self):
-        self.assertEqual(len(self.js_results["urls"]), len(URL_CASES))
-        for url, js_result in zip(URL_CASES, self.js_results["urls"], strict=True):
-            with self.subTest(url=url):
-                py_probability, py_features = score_url(url)
-                py_verdict = classify(py_probability)
+        for label, js_results in self.js_results.items():
+            self.assertEqual(len(js_results["urls"]), len(URL_CASES))
+            for url, js_result in zip(URL_CASES, js_results["urls"], strict=True):
+                with self.subTest(port=label, url=url):
+                    py_probability, py_features = score_url(url)
+                    py_verdict = classify(py_probability)
 
-                self.assertAlmostEqual(
-                    js_result["probability"], py_probability, places=3,
-                    msg=f"probability mismatch for {url!r}",
-                )
-                self.assertEqual(
-                    js_result["verdict"], py_verdict, msg=f"verdict mismatch for {url!r}"
-                )
-                self.assertEqual(
-                    set(js_result["features"]),
-                    set(py_features),
-                    msg=f"feature keys mismatch for {url!r}",
-                )
-                for key, py_value in py_features.items():
-                    js_value = js_result["features"][key]
-                    if isinstance(py_value, float):
-                        self.assertAlmostEqual(
-                            js_value, py_value, places=3,
-                            msg=f"feature {key!r} mismatch for {url!r}",
-                        )
-                    else:
-                        self.assertEqual(
-                            js_value, py_value, msg=f"feature {key!r} mismatch for {url!r}"
-                        )
+                    self.assertAlmostEqual(
+                        js_result["probability"], py_probability, places=3,
+                        msg=f"[{label}] probability mismatch for {url!r}",
+                    )
+                    self.assertEqual(
+                        js_result["verdict"], py_verdict,
+                        msg=f"[{label}] verdict mismatch for {url!r}",
+                    )
+                    self.assertEqual(
+                        set(js_result["features"]),
+                        set(py_features),
+                        msg=f"[{label}] feature keys mismatch for {url!r}",
+                    )
+                    for key, py_value in py_features.items():
+                        js_value = js_result["features"][key]
+                        if isinstance(py_value, float):
+                            self.assertAlmostEqual(
+                                js_value, py_value, places=3,
+                                msg=f"[{label}] feature {key!r} mismatch for {url!r}",
+                            )
+                        else:
+                            self.assertEqual(
+                                js_value, py_value,
+                                msg=f"[{label}] feature {key!r} mismatch for {url!r}",
+                            )
 
     def test_email_scoring_matches_python(self):
-        self.assertEqual(len(self.js_results["emails"]), len(EMAIL_CASES))
-        for (subject, body, auth), js_result in zip(
-            EMAIL_CASES, self.js_results["emails"], strict=True
-        ):
-            with self.subTest(subject=subject):
-                py_probability, py_features = score_email(subject, body, authentication_results=auth)
-                py_verdict = classify(py_probability)
+        for label, js_results in self.js_results.items():
+            self.assertEqual(len(js_results["emails"]), len(EMAIL_CASES))
+            for (subject, body, auth), js_result in zip(
+                EMAIL_CASES, js_results["emails"], strict=True
+            ):
+                with self.subTest(port=label, subject=subject):
+                    py_probability, py_features = score_email(subject, body, authentication_results=auth)
+                    py_verdict = classify(py_probability)
 
-                self.assertAlmostEqual(
-                    js_result["probability"], py_probability, places=3,
-                    msg=f"probability mismatch for {subject!r}",
-                )
-                self.assertEqual(
-                    js_result["verdict"], py_verdict, msg=f"verdict mismatch for {subject!r}"
-                )
-                self.assertEqual(
-                    set(js_result["features"]),
-                    set(py_features),
-                    msg=f"feature keys mismatch for {subject!r}",
-                )
-                for key, py_value in py_features.items():
-                    js_value = js_result["features"][key]
-                    if isinstance(py_value, float):
-                        self.assertAlmostEqual(
-                            js_value, py_value, places=3,
-                            msg=f"feature {key!r} mismatch for {subject!r}",
-                        )
-                    else:
-                        self.assertEqual(
-                            js_value, py_value, msg=f"feature {key!r} mismatch for {subject!r}"
-                        )
+                    self.assertAlmostEqual(
+                        js_result["probability"], py_probability, places=3,
+                        msg=f"[{label}] probability mismatch for {subject!r}",
+                    )
+                    self.assertEqual(
+                        js_result["verdict"], py_verdict,
+                        msg=f"[{label}] verdict mismatch for {subject!r}",
+                    )
+                    self.assertEqual(
+                        set(js_result["features"]),
+                        set(py_features),
+                        msg=f"[{label}] feature keys mismatch for {subject!r}",
+                    )
+                    for key, py_value in py_features.items():
+                        js_value = js_result["features"][key]
+                        if isinstance(py_value, float):
+                            self.assertAlmostEqual(
+                                js_value, py_value, places=3,
+                                msg=f"[{label}] feature {key!r} mismatch for {subject!r}",
+                            )
+                        else:
+                            self.assertEqual(
+                                js_value, py_value,
+                                msg=f"[{label}] feature {key!r} mismatch for {subject!r}",
+                            )
 
 
 if __name__ == "__main__":

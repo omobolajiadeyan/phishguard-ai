@@ -86,6 +86,9 @@ def on_free_hosting_platform(url: str) -> int:
         hostname = (urlparse(url).hostname or "").lower()
     except Exception:
         return 0
+    # A trailing root dot ("pages.dev.") is valid DNS syntax for the same
+    # name but would otherwise slip past a plain .endswith() check.
+    hostname = hostname.rstrip(".")
     return int(any(hostname.endswith("." + s) for s in FREE_HOSTING_SUFFIXES))
 
 
