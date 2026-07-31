@@ -23,6 +23,13 @@ class RepositoryPolicyTests(unittest.TestCase):
         self.assertTrue(any("blocked executable" in error for error in errors))
         self.assertTrue(any("NUL byte" in error for error in errors))
 
+    def test_allows_reviewed_extension_icon_assets(self):
+        icon_path = repository_policy.ROOT / "browser-extension/chromium/icons/icon16.png"
+
+        errors = repository_policy.check_files([("100644", icon_path)])
+
+        self.assertEqual(errors, [])
+
     def test_rejects_symlinks_and_executable_modes(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "script"
