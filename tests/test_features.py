@@ -5,7 +5,21 @@ from features import (
     has_punycode,
     has_unicode_hostname,
     on_free_hosting_platform,
+    subdomain_count,
 )
+
+
+class SubdomainCountTests(unittest.TestCase):
+    def test_uses_multi_label_public_suffix_boundary(self):
+        self.assertEqual(subdomain_count("https://www.example.co.uk/"), 0)
+        self.assertEqual(subdomain_count("https://login.example.co.uk/"), 1)
+
+    def test_respects_private_public_suffix_entries(self):
+        self.assertEqual(subdomain_count("https://alice.github.io/"), 0)
+        self.assertEqual(subdomain_count("https://foo.alice.github.io/"), 1)
+
+    def test_filters_presentation_labels_above_registrable_domain(self):
+        self.assertEqual(subdomain_count("https://www.login.example.co.uk/"), 1)
 
 
 class IdnFeatureTests(unittest.TestCase):
