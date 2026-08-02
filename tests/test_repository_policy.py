@@ -3,9 +3,19 @@ import unittest
 from pathlib import Path
 
 from tools import repository_policy
+from tools.generate_public_suffix_js import SOURCE, load_rules, render
 
 
 class RepositoryPolicyTests(unittest.TestCase):
+    def test_generated_public_suffix_bundles_are_identical(self):
+        web_bundle = repository_policy.ROOT / "web/public-suffix.js"
+        extension_bundle = (
+            repository_policy.ROOT / "browser-extension/chromium/public-suffix.js"
+        )
+
+        self.assertEqual(web_bundle.read_bytes(), extension_bundle.read_bytes())
+        self.assertEqual(web_bundle.read_text(encoding="utf-8"), render(load_rules(SOURCE)))
+
     def test_current_repository_passes(self):
         self.assertEqual(repository_policy.main(), 0)
 

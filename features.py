@@ -7,6 +7,8 @@ import re
 import math
 from urllib.parse import urlparse
 
+from psl import registrable_domain
+
 
 # Suspicious keywords commonly found in phishing URLs
 PHISHING_KEYWORDS = [
@@ -62,9 +64,12 @@ def subdomain_count(url: str) -> int:
     try:
         hostname = urlparse(url).hostname or ""
         parts = [part for part in hostname.lower().split(".") if part]
-        if len(parts) <= 2:
+        registrable = registrable_domain(hostname)
+        registrable_parts = [part for part in registrable.split(".") if part]
+        boundary = len(parts) - len(registrable_parts)
+        if boundary <= 0:
             return 0
-        subdomains = parts[:-2]
+        subdomains = parts[:boundary]
         meaningful = [
             part for part in subdomains
             if part not in COMMON_PRESENTATION_SUBDOMAINS
