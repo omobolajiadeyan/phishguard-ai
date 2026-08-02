@@ -11,6 +11,11 @@
 // Faithfully mirrors the Python source function-by-function; if you change
 // features.py, model.py, or email_auth.py, mirror the change here too.
 
+const PhishGuardPsl =
+  typeof module !== "undefined" && module.exports
+    ? require("./public-suffix.js")
+    : PhishGuardPublicSuffix;
+
 const PhishGuardScoring = (() => {
   const PHISHING_KEYWORDS = [
     "login", "signin", "verify", "update", "confirm", "account",
@@ -133,8 +138,11 @@ const PhishGuardScoring = (() => {
   function subdomainCount(url) {
     const hostname = safeHostname(url);
     const parts = hostname ? hostname.toLowerCase().split(".").filter((p) => p.length > 0) : [];
-    if (parts.length <= 2) return 0;
-    const subdomains = parts.slice(0, -2);
+    const registrable = PhishGuardPsl.registrableDomain(hostname);
+    const registrableParts = registrable ? registrable.split(".").filter((p) => p.length > 0) : [];
+    const boundary = parts.length - registrableParts.length;
+    if (boundary <= 0) return 0;
+    const subdomains = parts.slice(0, boundary);
     return subdomains.filter((part) => !COMMON_PRESENTATION_SUBDOMAINS.has(part)).length;
   }
 

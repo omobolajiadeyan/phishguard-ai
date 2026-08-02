@@ -19,6 +19,11 @@ import hashlib
 import urllib.request
 from pathlib import Path
 
+try:
+    from tools.generate_public_suffix_js import generate
+except ModuleNotFoundError:  # Direct execution sets tools/ as sys.path[0].
+    from generate_public_suffix_js import generate
+
 SOURCE_URL = "https://publicsuffix.org/list/public_suffix_list.dat"
 DEST_PATH = Path(__file__).parent.parent / "data" / "public_suffix_list.dat"
 
@@ -35,6 +40,7 @@ def main() -> None:
 
     data = fetch(SOURCE_URL, args.timeout)
     DEST_PATH.write_bytes(data)
+    generate()
 
     digest = hashlib.sha256(data).hexdigest()
     retrieved_on = datetime.date.today().isoformat()

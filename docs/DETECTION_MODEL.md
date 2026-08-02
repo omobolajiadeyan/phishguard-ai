@@ -39,6 +39,33 @@ Internationalized domains are legitimate and are not classified as phishing
 from either indicator alone. Confusable-character and brand-impersonation
 matching are not currently implemented.
 
+### Public-suffix-aware subdomain depth
+
+`subdomain_count` measures labels above the registrable domain rather than
+assuming the final two hostname labels always form that domain. The boundary
+comes from the bundled Mozilla Public Suffix List already used for redirect
+comparison. For example, `www.example.co.uk` has no meaningful subdomain after
+the presentation label `www` is removed, while `login.example.co.uk` has one.
+Private-section rules are honored, so `alice.github.io` is independently
+registrable and `foo.alice.github.io` has one subdomain.
+
+The web demo and Chromium extension load generated, offline JavaScript bundles
+from the same canonical `data/public_suffix_list.dat`; no DNS or remote lookup
+is performed. `tools/generate_public_suffix_js.py` regenerates both copies, and
+repository tests require them to remain identical and current.
+
+Live string-only validation on 2026-08-01 used 300 current OpenPhish URLs and
+the Tranco top 1,000 domains. The corrected boundary changed the feature for
+195 phishing samples and 29 legitimate samples. Legitimate false positives
+remained `0/1000`. Flagged phishing samples changed from `186/300` with the
+old, inflated count to `170/300`; strict `PHISHING` verdicts changed from
+`133/300` to `107/300`. This is a deliberate removal of invalid signal, not an
+accuracy improvement claim. Testing the existing free-hosting weight from
+`0.7` through `1.2` recovered at most three flagged samples with no false
+positives, so the weight was not changed merely to chase the prior number.
+Page-content or reputation signals are needed to recover that structural gap
+without miscounting suffix labels.
+
 ## Current Email Indicators
 
 - URLs and link-like language

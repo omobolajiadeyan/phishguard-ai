@@ -40,6 +40,12 @@ All notable changes to PhishGuard AI are documented here.
 
 ### Fixed
 
+- **`subdomain_count` now uses the Public Suffix List boundary** (issue #82)
+  instead of assuming every registrable domain has two labels. Domains such as
+  `www.example.co.uk` no longer count `example` as a subdomain, and private
+  suffixes such as `github.io` retain their independently registrable boundary.
+  The same generated offline PSL implementation is used by the web demo and
+  Chromium extension, with Python/JavaScript parity coverage.
 - **Saved-email analysis no longer trusts embedded authentication results by
   default.** The `eml` command ignores `Authentication-Results` unless
   `--trusted-authserv-id` is configured, and then accepts only an exact
