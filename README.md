@@ -381,6 +381,18 @@ researchers, and first-time open-source contributors.
 
 A [FreNiMi](https://frenimi.com) product.
 
+## Part of the Security Automation Toolkit
+
+PhishGuard AI is the flagship of a practical security-automation toolkit. The others:
+
+- **[Secrets Scanner](https://github.com/omobolajiadeyan/secrets-scanner)** — exposed-credential detection with redacted SARIF/JSON evidence
+- **[Log Analyzer](https://github.com/omobolajiadeyan/log-analyzer)** — MITRE ATT&CK-mapped log threat detection
+- **[BehaviorSense](https://github.com/omobolajiadeyan/behaviorsense)** — UEBA-style behavioral anomaly detection
+- **[CVE Dashboard](https://github.com/omobolajiadeyan/cve-dashboard)** — live NVD vulnerability intelligence
+- **[VulnGPT](https://github.com/omobolajiadeyan/vulngpt)** — CVE-to-remediation triage assistant
+
+Full portfolio: [github.com/omobolajiadeyan](https://github.com/omobolajiadeyan)
+
 ## Author
 
 **Omobolaji Adeyan** - Cybersecurity Engineer
