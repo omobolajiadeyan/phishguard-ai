@@ -57,8 +57,64 @@ TOP_DOMAINS = [
 # URL Features
 # ──────────────────────────────────────────────
 
+def _url_without_query(url: str) -> str:
+    """scheme://host/path only -- drops the query string and fragment.
+
+    Query-string tokens (password-reset/verification links, session IDs,
+    tracking params) are near-universal on real sites and carry almost no
+    domain-identity signal; legitimate and phishing URLs alike pad them
+    similarly. url_length, special_char_count, and digit_ratio are all
+    scored against this substring instead of the whole URL, so a realistic
+    token-bearing security link isn't penalized for doing what a query
+    string is for. Found via a 2026-08-24 stress test against real domains
+    -- see docs/BENCHMARK.md's "False-Positive Stress Test".
+    """
+    try:
+        parsed = urlparse(url)
+        return parsed._replace(query="", fragment="").geturl()
+    except ValueError:
+        return url
+
+
+# Hard cap on the url_length feature's raw character count, applied before
+# the weight. Excluding the query string (above) already handles most
+# realistic long-URL cases; this is a secondary safety net so a
+# pathologically deep path still can't scale the contribution without
+# bound. A hard cap (vs. e.g. a log transform) keeps the Python/JS ports
+# trivially identical -- see tests/test_js_parity.py.
+_URL_LENGTH_CAP = 80
+
+
 def url_length(url: str) -> int:
-    return len(url)
+    return min(len(_url_without_query(url)), _URL_LENGTH_CAP)
+
+
+def query_length(url: str) -> int:
+    """Length of the query string alone. Tracked for explainability but
+    given near-zero weight in model.py: both a legitimate reset/tracking
+    token and phishing obfuscation produce long query strings, so this
+    carries almost no signal on its own about domain legitimacy."""
+    try:
+        return len(urlparse(url).query)
+    except ValueError:
+        return 0
+
+
+def query_param_count(url: str) -> int:
+    """Number of query parameters (by "=" count). A single reset/session
+    token is one parameter; a URL stuffed with several tracking or
+    obfuscation parameters is a real, if weak, signal that raw query
+    length alone doesn't capture -- found while validating the
+    query-string scoping fix against a real phishing sample whose only
+    suspicious structure was five chained "utm_*" parameters (see
+    docs/BENCHMARK.md's "False-Positive Stress Test" fix). Given a small
+    weight in model.py -- deliberately much smaller than the pre-fix
+    special_char_count contribution, so a single token stays cheap while a
+    stuffed query string still counts for something."""
+    try:
+        return urlparse(url).query.count("=")
+    except ValueError:
+        return 0
 
 
 def subdomain_count(url: str) -> int:
@@ -99,7 +155,11 @@ def on_free_hosting_platform(url: str) -> int:
 
 
 def special_char_count(url: str) -> int:
-    return sum(url.count(c) for c in ["@", "-", "_", "~", "%", "=", "?", "&", "#"])
+    # Scored on the same non-query substring as url_length: "? & = #" are
+    # structural query-string syntax, not obfuscation, when a query string
+    # is doing what query strings are for.
+    scored = _url_without_query(url)
+    return sum(scored.count(c) for c in ["@", "-", "_", "~", "%", "=", "?", "&", "#"])
 
 
 def has_https(url: str) -> int:
@@ -107,9 +167,13 @@ def has_https(url: str) -> int:
 
 
 def digit_ratio(url: str) -> float:
-    if not url:
+    # Scored on the same non-query substring as url_length: a hex/base64
+    # reset token in the query string is digit-heavy on essentially every
+    # real site with an account flow, not a domain-level suspicion signal.
+    scored = _url_without_query(url)
+    if not scored:
         return 0.0
-    return sum(c.isdigit() for c in url) / len(url)
+    return sum(c.isdigit() for c in scored) / len(scored)
 
 
 def phishing_keyword_count(url: str) -> int:
@@ -264,6 +328,8 @@ def extract_url_features(url: str) -> dict:
     """Extract all URL features and return as a named dict."""
     return {
         "url_length":            url_length(url),
+        "query_length":          query_length(url),
+        "query_param_count":     query_param_count(url),
         "subdomain_count":       subdomain_count(url),
         "has_ip_address":        has_ip_address(url),
         "special_char_count":    special_char_count(url),

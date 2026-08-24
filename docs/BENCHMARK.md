@@ -373,3 +373,67 @@ Rerun this yourself:
 curl -sL -o /tmp/tranco.zip https://tranco-list.eu/top-1m.csv.zip && unzip -o /tmp/tranco.zip -d /tmp/tranco
 python tools/evaluate_fp_stress_test.py /tmp/tranco/top-1m.csv --domain-limit 3000
 ```
+
+## Query-String Scoping Fix (2026-08-24)
+
+`url_length`, `special_char_count`, and `digit_ratio` are now scored on
+`scheme://host/path` only, excluding the query string, with `url_length`
+additionally capped at 80 characters. See
+[DETECTION_MODEL.md](DETECTION_MODEL.md)'s "Query-string scoping" section
+for the full rationale, including a real regression this fix would have
+caused (a licensed phishing sample whose only suspicious structure was five
+chained tracking parameters) and how `query_length`/`query_param_count`
+restore a small, deliberately weak amount of that signal back.
+
+Re-run against the same 3,000-domain × 10-template stress test above:
+
+| URL shape | Flagged, before → after | Strict PHISHING, before → after |
+| --- | --- | --- |
+| root | 0.0% → 0.0% | 0.0% → 0.0% |
+| `www` root | 0.0% → 0.0% | 0.0% → 0.0% |
+| `/login` | 0.5% → 0.3% | 0.0% → 0.0% |
+| `/signin` | 0.9% → 0.8% | 0.0% → 0.0% |
+| `/account/login` | 5.5% → 5.5% | 0.5% → 0.5% |
+| `secure.{domain}/login` | 24.2% → 24.2% | 0.7% → 0.7% |
+| `accounts.{domain}/signin` | 69.0% → 69.0% | 1.0% → 1.0% |
+| `/account/verify?token=...` | 100.0% → **9.7%** | 71.5% → **0.5%** |
+| `/password/reset?token=...&redirect=...` | 100.0% → **4.3%** | 100.0% → **0.3%** |
+| `/support/account/security/verify-identity` | 100.0% → 100.0% | 100.0% → 100.0% |
+| **overall (all templates combined)** | **40.0% → 21.4%** | **27.4% → 10.3%** |
+
+The two token-bearing templates — the worst offenders, and the ones the
+query-string scoping fix directly targets — dropped from 100% false
+positives to near zero. Three shapes are **unchanged**, and that's
+expected, not a gap in this fix: `accounts.{domain}/signin` and
+`secure.{domain}/login` are driven by `subdomain_count`, not query-string
+scoring, and `support_verify_identity` (no query string at all) is driven
+by `phishing_keywords` density plus base path length. Both need a
+domain-reputation signal to fix without risking a real recall regression —
+see [DETECTION_MODEL.md](DETECTION_MODEL.md)'s Known Limitations.
+
+Recall was re-validated on a fresh, independently-pulled OpenPhish feed
+(different 300 URLs than any prior run in this document) to confirm the
+fix didn't cost real detection: 55.7% flagged / 34.0% strict PHISHING,
+0 false positives on 1,000 real legitimate root domains — consistent with,
+not below, every other dated recall number in this document. The two
+regression fixtures (`data/benchmark_urls.jsonl`,
+`data/public_benchmark_urls.jsonl`) both stayed at precision/recall 1.000.
+
+The typosquat weight (`typosquatting_score`, `model.py`'s `URL_WEIGHTS`)
+was also lowered from `0.85` to `0.65` in this change, so a lone
+edit-distance-1 collision against the 47-entry brand reference list (e.g.
+`hicloud.com` vs. `icloud.com` — a real, coincidental collision, not a
+constructed adversarial example) lands in `SUSPICIOUS` rather than
+`PHISHING` when nothing else about the URL is suspicious. This does not
+fully solve that collision — it's softened, not eliminated — and a genuine
+typosquat (`paypa1.com/login`) still lands in `SUSPICIOUS` at this weight,
+unchanged from before.
+
+Rerun this yourself the same way as the stress test above; rerun the
+regression fixtures with:
+
+```bash
+python tools/evaluate_url_benchmark.py
+python tools/evaluate_url_benchmark.py data/public_benchmark_urls.jsonl
+python tools/evaluate_url_benchmark.py data/branded_path_benchmark_urls.jsonl
+```

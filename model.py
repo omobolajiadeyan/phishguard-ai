@@ -13,7 +13,9 @@ from email_auth import extract_authentication_features
 # Explainable heuristic weights for common phishing indicators.
 # Positive weight = increases phishing probability.
 URL_WEIGHTS = {
-    "url_length":            0.015,  # longer URLs are more suspicious
+    "url_length":            0.015,  # longer URLs are more suspicious (scored on host+path only, capped at 80 chars -- see features.py's _url_without_query)
+    "query_length":          0.002,  # near-zero: legitimate reset/tracking tokens and phishing obfuscation both produce long query strings, so length alone here carries almost no signal
+    "query_param_count":     0.02,   # small: a single reset/session token is cheap, but several chained tracking/obfuscation params still counts for something
     "subdomain_count":       0.18,   # subdomains used to fake legitimacy
     "has_ip_address":        0.90,   # IP in URL = very suspicious
     "special_char_count":    0.06,   # many special chars = obfuscation
@@ -28,7 +30,7 @@ URL_WEIGHTS = {
     "has_punycode":          0.10,   # contextual IDNA signal, not malicious alone
     "has_unicode_hostname":  0.08,   # legitimate IDNs exist; keep weight modest
     "has_opaque_hostname_label": 0.90, # long compact labels can indicate generated hosts
-    "typosquatting_score":   0.85,   # close edit-distance match to a known brand
+    "typosquatting_score":   0.65,   # close edit-distance match to a known brand. Was 0.85; lowered so a lone typosquat hit with no corroborating signal lands in SUSPICIOUS, not PHISHING -- edit-distance-1 collisions against short real domains happen by coincidence (e.g. hicloud.com vs icloud.com) more often than the raw distance-1 signal implies. Does not fully solve that collision (still SUSPICIOUS, not SAFE) -- see docs/DETECTION_MODEL.md's Known Limitations.
     "on_free_hosting_platform": 0.70, # disposable free-hosting subdomain (pages.dev, netlify.app, etc.)
     # redirect chain features — only present when --follow-redirects is used
     "redirect_crossed_domain": 0.65, # chain left the original domain

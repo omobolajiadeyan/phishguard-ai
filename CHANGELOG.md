@@ -4,6 +4,37 @@ All notable changes to PhishGuard AI are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`url_length`, `special_char_count`, and `digit_ratio` now score
+  `scheme://host/path` only, excluding the query string** (`url_length`
+  additionally capped at 80 characters). Previously scored against the
+  whole URL, which made a realistic token-bearing security link (a
+  password-reset or verification link) structurally indistinguishable from
+  obfuscation — found by the 2026-08-24 false-positive stress test. Two new
+  features, `query_length` and `query_param_count`, restore a small,
+  deliberately weak amount of query-string signal back — validating this
+  fix caught a real regression (a licensed phishing sample whose only
+  suspicious structure was five chained tracking parameters, which the
+  first version of this fix would have missed; `query_param_count` fixes
+  it). Measured on the 3,000-domain × 10-template stress test: overall
+  false-positive rate 40.0%→**21.4%**, strict PHISHING 27.4%→**10.3%**,
+  `password_reset_link` (previously 100%/100%) down to 4.3%/0.3%. Real
+  recall re-validated on a fresh feed: unchanged within normal sample
+  variance, both regression fixtures stayed at precision/recall 1.000. Two
+  false-positive shapes are **not** fixed by this change and remain a
+  named, tracked gap — see `docs/DETECTION_MODEL.md`'s Known Limitations.
+  See `docs/DETECTION_MODEL.md`'s "Query-string scoping" and
+  `docs/BENCHMARK.md`'s "Query-String Scoping Fix" for full methodology.
+- **Typosquat weight lowered from `0.85` to `0.65`** (`typosquatting_score`
+  in `model.py`'s `URL_WEIGHTS`). A lone edit-distance-1 collision against
+  the 47-entry brand reference list (e.g. `hicloud.com` vs. `icloud.com` —
+  a real, coincidental collision, not a constructed example) now lands in
+  `SUSPICIOUS` rather than `PHISHING` when nothing else about the URL is
+  suspicious. Does not fully solve the collision (softened, not
+  eliminated); a genuine typosquat (`paypa1.com/login`) is unaffected,
+  still `SUSPICIOUS` at this weight as it was before.
+
 ### Added
 
 - **`data/branded_path_benchmark_urls.jsonl` + `RealisticSecurityUrlFalsePositiveTests`**

@@ -16,12 +16,18 @@ as the measured probability that a target is malicious.
 
 ## Current URL Indicators
 
-- URL, hostname, path, and subdomain length or depth
+- URL, hostname, path, and subdomain length or depth (`url_length` is
+  scored on `scheme://host/path` only, excluding the query string, and
+  capped at 80 characters — see "Query-string scoping" below)
 - IP-address hosts and explicit ports
 - HTTPS presence
 - Suspicious top-level domains
 - Phishing-related words
-- Digit and special-character density
+- Digit and special-character density (also scored on `scheme://host/path`
+  only, for the same reason as `url_length`)
+- Query-string length and parameter count (`query_length`,
+  `query_param_count`), each weighted deliberately small — see
+  "Query-string scoping" below
 - Hostname entropy
 - Reserved opaque hostname labels: long, compact, alphanumeric labels with
   moderate entropy and no separators in `.example` public-safe fixtures
@@ -71,6 +77,38 @@ accuracy improvement claim. Testing the existing free-hosting weight from
 positives, so the weight was not changed merely to chase the prior number.
 Page-content or reputation signals are needed to recover that structural gap
 without miscounting suffix labels.
+
+### Query-string scoping
+
+Found via a 2026-08-24 stress test (docs/BENCHMARK.md's "False-Positive
+Stress Test") against 3,000 real domains: `url_length`, `special_char_count`,
+and `digit_ratio`, when scored against the whole URL, made a realistic
+token-bearing security link (a password-reset or verification link) close
+to indistinguishable from obfuscation, because both are long, digit-heavy,
+and punctuation-heavy for the same structural reason — a query string is
+doing what query strings are for. All three are now scored on
+`scheme://host/path` only (`features.py`'s `_url_without_query`), and
+`url_length` is capped at 80 characters as a secondary safety net against
+pathologically deep paths.
+
+This isn't a blanket "ignore the query string" fix: validating it against
+the existing licensed regression slice caught a real phishing sample
+(`public-phishing-001`, five chained `utm_*` tracking parameters and no
+other suspicious structure) whose only signal was query-string clutter,
+and the initial version of this fix would have missed it. Two features
+restore a small amount of query-string signal deliberately: `query_length`
+(near-zero weight — length alone doesn't distinguish a legitimate token
+from padding) and `query_param_count` (a small weight per `=`-separated
+parameter — a single token is cheap, several chained parameters still
+counts for something). Re-validated: `data/public_benchmark_urls.jsonl`
+recall stayed at 1.000 with this restored, and the branded-path fixture's
+token-link cases stayed non-PHISHING.
+
+Measured impact (3,000-domain × 10-template stress test, before → after):
+overall false-positive rate 40.0%→21.4%, strict PHISHING 27.4%→10.3%,
+`verify_token_link` 71.5%→0.5% strict, `password_reset_link` 100%→0.3%
+strict. Two shapes are unaffected by this fix and remain a known gap —
+see Known Limitations below.
 
 ## Current Email Indicators
 
@@ -250,21 +288,42 @@ cannot distinguish an improvement from overfitting.
   abused-as-a-service infrastructure, not freshly registered) — no feature
   in this model addresses that category. See docs/BENCHMARK.md's
   "Domain-Age Validation" for the specific example found during this audit.
-- On realistic security-relevant URL shapes on real, popular domains —
-  login pages, password-reset links with tokens, verification paths,
-  branded subdomains — the offline default has a severe false-positive
-  rate (up to 100% on some shapes; see docs/BENCHMARK.md's "False-Positive
-  Stress Test"). The dominant cause is an uncapped, linear `url_length`
-  weight applied to the whole URL: a realistic token-bearing security URL
-  is long by design, for legitimate and phishing URLs alike, and length
-  alone is often enough to cross the PHISHING threshold. A domain-reputation
-  fix is deferred: the existing 47-entry brand reference list is far too
-  small to help (fires on ~1.4% of real domains), and a larger bundled list
-  raises an unresolved third-party redistribution-licensing question. A
-  rearchitecture fixing this is in progress — see the project's tracked
-  plan for phased fixes (URL-length/query-string scoping, typosquat-weight
-  softening, domain-age-based false-positive suppression, and statistically
-  fit weights).
+- **Realistic security-relevant URL shapes** (login pages, password-reset
+  links with tokens, verification paths, branded subdomains) previously had
+  a severe false-positive rate — up to 100% on some shapes — because
+  `url_length`, `special_char_count`, and `digit_ratio` were scored against
+  the *whole* URL, so a realistic token-bearing security link was
+  structurally indistinguishable from obfuscation. This is now
+  substantially fixed: those three features are scored on
+  `scheme://host/path` only (query-string tokens carry almost no signal —
+  see `query_length`/`query_param_count`), `url_length` is capped at 80
+  characters, and the typosquat weight was lowered so a lone edit-distance
+  collision (e.g. `hicloud.com` vs. `icloud.com`) lands in `SUSPICIOUS`, not
+  `PHISHING`. Measured on the same 3,000-domain × 10-template stress test:
+  overall false-positive rate 40.0%→**21.4%**, strict PHISHING 27.4%→**10.3%**,
+  with `password_reset_link` (previously 100%/100%) down to 4.3%/0.3%. See
+  docs/BENCHMARK.md's "False-Positive Stress Test" for the full before/after
+  table and methodology.
+- **Two categories in that same stress test are not fixed by the above**,
+  named rather than hidden: (1) `subdomain_count` still penalizes branded
+  subdomains like `accounts.{domain}` (69.0% flagged) and
+  `secure.{domain}` (24.2% flagged) — this is a domain-reputation problem,
+  not a length/query problem, and needs the deferred reputation signal
+  below; (2) a URL with several generic security keywords packed into a
+  deep path but no query string (`/support/account/security/verify-identity`,
+  100% flagged, 100% strict PHISHING, unchanged) is driven by
+  `phishing_keywords` density plus base path length, neither of which the
+  query-string fix touches — tuning either weight down to fix this one
+  shape was rejected as likely overfitting (see the Change Standard above)
+  without the domain-reputation context to tell a real branded path from
+  an imitation of one.
+- **A domain-reputation fix remains deferred** for the two gaps above: the
+  existing 47-entry brand reference list is far too small to help (fires on
+  ~1.4% of real domains), and a larger bundled popularity list raises an
+  unresolved third-party redistribution-licensing question. Extending the
+  opt-in `--check-domain-age` RDAP path with a negative weight for old
+  domains is the next planned step — see the project's tracked
+  rearchitecture plan.
 
 Issue #3 tracks a labeled evaluation benchmark for reproducible regression
 metrics. Population-level accuracy or calibration claims require a larger,
