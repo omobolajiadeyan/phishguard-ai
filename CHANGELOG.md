@@ -6,6 +6,25 @@ All notable changes to PhishGuard AI are documented here.
 
 ### Added
 
+- **`tools/evaluate_fp_stress_test.py`** — every existing false-positive
+  number in this project's evidence docs is measured against bare root URLs
+  (`https://{domain}/`), which is the easiest possible case. This tool
+  generates ten realistic security-relevant URL shapes per real domain
+  (login, signin, account/verify with a token, password-reset with a token
+  and redirect, branded subdomains, a nested identity-verification path)
+  against an externally-supplied domain ranking (nothing bundled, same
+  no-committed-third-party-data design as `evaluate_live_traffic_benchmark.py`)
+  and reports the false-positive rate per template. Found a severe gap:
+  3,000 real Tranco top-3,000 domains × 10 templates (30,000 URLs), offline
+  scoring only — 40.0% overall false-positive rate, 27.4% strict PHISHING,
+  with three templates (`verify_token_link`, `password_reset_link`,
+  `support_verify_identity`) at 70-100% false positives regardless of which
+  real domain they're attached to. Root and simple-login shapes stay near
+  zero, which is exactly why this was invisible until now. See
+  `docs/BENCHMARK.md`'s new "False-Positive Stress Test" section for the
+  full table and `docs/DETECTION_MODEL.md`'s Known Limitations for the root
+  cause. This is instrumentation only — no scoring behavior changed; fixes
+  are tracked as a phased rearchitecture.
 - **`--check-domain-age` / `domain_age.py`** — an opt-in RDAP lookup that
   weights recently-registered domains as more suspicious
   (`domain_newer_than_30d` weight `0.65`, `domain_newer_than_90d` weight

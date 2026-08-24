@@ -302,3 +302,58 @@ python tools/evaluate_live_traffic_benchmark.py /tmp/feed.txt /tmp/tranco/top-1m
 `rdap.org` is a free, shared, third-party service — keep `--domain-age-delay`
 at `0.4` or higher, and avoid raising `--legit-limit` far past the sample
 size used here without a longer delay.
+
+## False-Positive Stress Test (2026-08-24)
+
+Every false-positive number above — in this document and in
+[PROJECT_EVIDENCE.md](PROJECT_EVIDENCE.md) — is measured against bare root
+URLs (`https://{domain}/`). That is deliberately the easiest possible case:
+it says nothing about how the detector behaves on the URL shapes a real
+security-relevant flow actually produces — a login page, a password-reset
+link with a token, a verification path, or a branded subdomain — which is
+also exactly the shape a phishing page is built to imitate.
+
+`tools/evaluate_fp_stress_test.py` closes that gap: it takes the same kind
+of externally-supplied domain ranking `evaluate_live_traffic_benchmark.py`
+already uses (nothing bundled) and generates ten realistic URL variants per
+domain — root, `www` root, `/login`, `/signin`, `/account/login`, a
+verification link with a token, a password-reset link with a token and
+redirect, `accounts.{domain}/signin`, `secure.{domain}/login`, and a nested
+`/support/account/security/verify-identity` path — instead of one root URL,
+and reports the false-positive rate per template so a regression's root
+cause is traceable rather than hidden in one aggregate number.
+
+**Result, 3,000 real Tranco top-3,000 domains × 10 templates (30,000 URLs),
+offline scoring only (no `--check-domain-age`):**
+
+| URL shape | Flagged (SUSPICIOUS or PHISHING) | Strict PHISHING |
+| --- | --- | --- |
+| root | 0.0% | 0.0% |
+| `www` root | 0.0% | 0.0% |
+| `/login` | 0.5% | 0.0% |
+| `/signin` | 0.9% | 0.0% |
+| `/account/login` | 5.5% | 0.5% |
+| `secure.{domain}/login` | 24.2% | 0.7% |
+| `accounts.{domain}/signin` | 69.0% | 1.0% |
+| `/account/verify?token=...` | 100.0% | 71.5% |
+| `/password/reset?token=...&redirect=...` | 100.0% | 100.0% |
+| `/support/account/security/verify-identity` | 100.0% | 100.0% |
+| **overall (all templates combined)** | **40.0%** | **27.4%** |
+
+Root and simple-login shapes score close to zero false positives — that's
+the exact shape every existing benchmark in this document already measures,
+which is why it looked clean. Once a URL has a token, a nested
+account/security path, or a subdomain — the shape a real password-reset or
+identity-verification link actually has, on any of the 3,000 most-visited
+real domains on the internet, with zero exceptions on three of the ten
+templates — the false-positive rate is not a tuning gap, it's close to
+guaranteed. This is a known, tracked limitation; see
+[DETECTION_MODEL.md](DETECTION_MODEL.md)'s Known Limitations section and the
+project's rearchitecture plan for the fix in progress.
+
+Rerun this yourself:
+
+```bash
+curl -sL -o /tmp/tranco.zip https://tranco-list.eu/top-1m.csv.zip && unzip -o /tmp/tranco.zip -d /tmp/tranco
+python tools/evaluate_fp_stress_test.py /tmp/tranco/top-1m.csv --domain-limit 3000
+```

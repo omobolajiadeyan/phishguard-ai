@@ -250,6 +250,21 @@ cannot distinguish an improvement from overfitting.
   abused-as-a-service infrastructure, not freshly registered) — no feature
   in this model addresses that category. See docs/BENCHMARK.md's
   "Domain-Age Validation" for the specific example found during this audit.
+- On realistic security-relevant URL shapes on real, popular domains —
+  login pages, password-reset links with tokens, verification paths,
+  branded subdomains — the offline default has a severe false-positive
+  rate (up to 100% on some shapes; see docs/BENCHMARK.md's "False-Positive
+  Stress Test"). The dominant cause is an uncapped, linear `url_length`
+  weight applied to the whole URL: a realistic token-bearing security URL
+  is long by design, for legitimate and phishing URLs alike, and length
+  alone is often enough to cross the PHISHING threshold. A domain-reputation
+  fix is deferred: the existing 47-entry brand reference list is far too
+  small to help (fires on ~1.4% of real domains), and a larger bundled list
+  raises an unresolved third-party redistribution-licensing question. A
+  rearchitecture fixing this is in progress — see the project's tracked
+  plan for phased fixes (URL-length/query-string scoping, typosquat-weight
+  softening, domain-age-based false-positive suppression, and statistically
+  fit weights).
 
 Issue #3 tracks a labeled evaluation benchmark for reproducible regression
 metrics. Population-level accuracy or calibration claims require a larger,
