@@ -437,3 +437,65 @@ python tools/evaluate_url_benchmark.py
 python tools/evaluate_url_benchmark.py data/public_benchmark_urls.jsonl
 python tools/evaluate_url_benchmark.py data/branded_path_benchmark_urls.jsonl
 ```
+
+## Domain-Age False-Positive Suppression (2026-08-24)
+
+The query-string scoping fix above deliberately left two false-positive
+shapes untouched: branded subdomains (`accounts.{domain}`,
+`secure.{domain}`, driven by `subdomain_count`) and a keyword-dense path
+with no query string (`support_verify_identity`, driven by
+`phishing_keywords` density plus base path length). Neither is a
+query-string problem, so scoping the query string differently can't fix
+them. A general offline domain-reputation signal would, but is deferred —
+see [DETECTION_MODEL.md](DETECTION_MODEL.md)'s Known Limitations for why.
+
+A narrower, already-shippable partial fix exists: `domain_age.py`'s RDAP
+lookup already tells us a domain's exact registration age when a caller
+opts into `--check-domain-age`. `domain_newer_than_30d`/`90d` already use
+that to raise risk for young domains; `domain_older_than_2y` (new, weight
+`-0.60`) uses it to lower risk for domains old enough — 730+ days — that a
+fresh-registration-based attack is implausible.
+
+**Individual spot checks:** `accounts.google.com/signin` and
+`secure.github.com/login` (offline: `SUSPICIOUS`) both move to `SAFE` with
+`--check-domain-age`. `github.com/support/account/security/verify-identity`
+(offline: `PHISHING`, 0.9291) drops to 0.7745 — real improvement, not
+enough alone to clear `SUSPICIOUS` at this weight.
+
+**At scale**, re-running the same 10-template stress test on 150 real
+domains with `--check-domain-age`:
+
+| Metric | Offline only | + domain age |
+| --- | --- | --- |
+| Overall false-positive rate | 21.4% | **15.7%** |
+| Strict PHISHING false-positive rate | 10.3% | **6.1%** |
+| `accounts.{domain}/signin` flagged | 69.0% | **26.7%** |
+| `secure.{domain}/login` flagged | 24.2% | **12.0%** |
+| `support_verify_identity` strict PHISHING | 100.0% | **56.0%** |
+
+Roughly half of the previously-guaranteed false positives on the
+keyword-dense shape now land in `SUSPICIOUS` instead of `PHISHING` — real
+softening, not a full fix, exactly as the weight was calibrated to do (see
+[DETECTION_MODEL.md](DETECTION_MODEL.md)'s weight rationale for why a
+stronger weight, empirically `-0.90`, was rejected).
+
+**Recall check.** A negative weight for old domains only helps if it
+doesn't also mask old-but-compromised phishing infrastructure — the exact
+category this document's "Domain-Age Validation" section above already
+names as unaddressed (e.g. the `s4w.in` example there). Re-running the
+same live-traffic + domain-age methodology on a fresh feed: 62.0% flagged /
+37.3% strict PHISHING recall, 0 false positives on 300 real legitimate
+domains — held steady, not below the offline baseline in this document.
+
+**This does not fix the default offline path.** Both false-positive shapes
+are still present without `--check-domain-age`, or when RDAP is
+unreachable. It also does not close the compromised-old-domain recall gap
+named above — an old domain being legitimate and an old domain being
+compromised look identical to a registration-date check by construction.
+
+Rerun this yourself:
+
+```bash
+curl -sL -o /tmp/tranco.zip https://tranco-list.eu/top-1m.csv.zip && unzip -o /tmp/tranco.zip -d /tmp/tranco
+python tools/evaluate_fp_stress_test.py /tmp/tranco/top-1m.csv --domain-limit 150 --check-domain-age --domain-age-delay 0.3
+```

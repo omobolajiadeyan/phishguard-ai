@@ -114,19 +114,45 @@ class DomainAgeFeatureTests(unittest.TestCase):
 
     def test_both_flags_set_for_a_very_new_domain(self):
         features = self._features_for_age(5)
-        self.assertEqual(features, {"domain_newer_than_30d": 1, "domain_newer_than_90d": 1})
+        self.assertEqual(
+            features,
+            {"domain_newer_than_30d": 1, "domain_newer_than_90d": 1, "domain_older_than_2y": 0},
+        )
 
     def test_only_the_wider_flag_set_between_30_and_90_days(self):
         features = self._features_for_age(60)
-        self.assertEqual(features, {"domain_newer_than_30d": 0, "domain_newer_than_90d": 1})
+        self.assertEqual(
+            features,
+            {"domain_newer_than_30d": 0, "domain_newer_than_90d": 1, "domain_older_than_2y": 0},
+        )
 
-    def test_neither_flag_set_for_an_established_domain(self):
+    def test_neither_new_flag_set_for_a_moderately_established_domain(self):
+        # Old enough to clear both "newer than" thresholds, but not yet
+        # "older than 2y" (730 days) -- neutral on both axes.
         features = self._features_for_age(400)
-        self.assertEqual(features, {"domain_newer_than_30d": 0, "domain_newer_than_90d": 0})
+        self.assertEqual(
+            features,
+            {"domain_newer_than_30d": 0, "domain_newer_than_90d": 0, "domain_older_than_2y": 0},
+        )
 
     def test_boundary_at_exactly_30_days_is_not_newer_than_30d(self):
         features = self._features_for_age(30)
         self.assertEqual(features["domain_newer_than_30d"], 0)
+
+    def test_older_than_2y_flag_set_for_a_long_established_domain(self):
+        features = self._features_for_age(3650)  # ~10 years
+        self.assertEqual(
+            features,
+            {"domain_newer_than_30d": 0, "domain_newer_than_90d": 0, "domain_older_than_2y": 1},
+        )
+
+    def test_boundary_at_exactly_730_days_is_older_than_2y(self):
+        features = self._features_for_age(730)
+        self.assertEqual(features["domain_older_than_2y"], 1)
+
+    def test_boundary_at_729_days_is_not_yet_older_than_2y(self):
+        features = self._features_for_age(729)
+        self.assertEqual(features["domain_older_than_2y"], 0)
 
 
 if __name__ == "__main__":

@@ -198,11 +198,13 @@ coverage: `tests/test_psl.py`.
 
 `--check-domain-age` (CLI: `url`, `eml`; REST: `POST /v1/url`'s
 `check_domain_age`) looks up the registrable domain's registration date via
-RDAP (`domain_age.py`) and adds two features: `domain_newer_than_30d`
+RDAP (`domain_age.py`) and adds three features: `domain_newer_than_30d`
 (weight `0.65`) and `domain_newer_than_90d` (weight `0.30`, additive with
-the first for a domain under 30 days old). Both are absent — not
-zero — when the age can't be determined, so an unknown age contributes no
-risk either way, the same convention `redirect_hops` already uses.
+the first for a domain under 30 days old) raise risk; `domain_older_than_2y`
+(weight `-0.60`, domains registered 730+ days ago) lowers it. All three are
+absent — not zero — when the age can't be determined, so an unknown age
+contributes no risk either way, the same convention `redirect_hops` already
+uses.
 
 This closes a gap the project's own live-traffic validation quantified
 directly: of the phishing URLs the string-only model still misses, most are
@@ -252,6 +254,57 @@ and the top 300 Tranco domains, with domain-age enabled:
 See `docs/BENCHMARK.md`'s "Domain-Age Validation" section for the full
 methodology, the sample-size caveat on the false-positive row, and what
 this still doesn't fix.
+
+### Domain-age false-positive suppression
+
+`domain_older_than_2y` is the mirror-image feature: registration age also
+lowers risk for domains old enough that a fresh-registration-based attack
+is implausible. It exists to partially mitigate two false-positive shapes
+named in Known Limitations — branded subdomains (`accounts.{domain}`,
+`secure.{domain}`) and keyword-dense paths — that the query-string scoping
+fix above deliberately didn't touch, since neither is a query-string
+problem.
+
+**Weight rationale.** `-0.60` was chosen conservatively, not maximally: a
+stronger negative weight flips more false positives, but this feature can
+only fire when a caller opts in and has network access, and — more
+importantly — old domains are also exactly the category
+`docs/BENCHMARK.md`'s "Domain-Age Validation" already names as unaddressed
+(compromised or abused-as-a-service infrastructure, e.g. the `s4w.in`
+example there). A strong negative weight for "old domain" would directly
+work against detecting that category. `-0.60` was picked as the point that
+meaningfully helps the false-positive shapes above without being aggressive
+enough to erase that signal — see the validation below for the real-recall
+check this reasoning was verified against, not just assumed.
+
+**Validation (2026-08-24):** individual real-domain spot checks —
+`accounts.google.com/signin` and `secure.github.com/login` (offline:
+`SUSPICIOUS`) both move to `SAFE`; `github.com/support/account/security/
+verify-identity` (offline: `PHISHING`, 0.9291) drops to 0.7745 — real
+improvement, but not enough alone to clear the `SUSPICIOUS` threshold at
+this weight (a stronger weight, empirically `-0.90`, would flip it, but was
+rejected — see the weight rationale above).
+
+At scale (150 real domains x the same 10 templates as the stress test
+above, `--check-domain-age`): overall false-positive rate 21.4%->**15.7%**,
+strict PHISHING 10.3%->**6.1%**; `accounts_subdomain` flagged 69.0%->**26.7%**,
+`secure_subdomain_login` flagged 24.2%->**12.0%**; `support_verify_identity`
+strict PHISHING 100%->**56.0%** -- confirms the single-case result above
+generalizes: roughly half of the previously-guaranteed false positives on
+this shape now land in `SUSPICIOUS` instead, real softening, not a full fix.
+
+Real recall was re-checked on the same live-traffic + domain-age
+methodology as the table above, on a fresh feed, to confirm this weight
+doesn't cost detection of old-but-compromised phishing domains: 62.0%
+flagged / 37.3% strict PHISHING, 0 false positives on 300 real legitimate
+domains -- held steady, not below the offline baseline. See
+`docs/BENCHMARK.md`'s "Domain-Age False-Positive Suppression" for the full
+tables.
+
+This does not fix the default offline path — both false-positive shapes
+above are still present without `--check-domain-age` (or when RDAP is
+unreachable). Closing that gap needs the deferred domain-reputation signal
+discussed in Known Limitations.
 
 ## Change Standard
 
@@ -304,26 +357,31 @@ cannot distinguish an improvement from overfitting.
   with `password_reset_link` (previously 100%/100%) down to 4.3%/0.3%. See
   docs/BENCHMARK.md's "False-Positive Stress Test" for the full before/after
   table and methodology.
-- **Two categories in that same stress test are not fixed by the above**,
-  named rather than hidden: (1) `subdomain_count` still penalizes branded
-  subdomains like `accounts.{domain}` (69.0% flagged) and
-  `secure.{domain}` (24.2% flagged) — this is a domain-reputation problem,
-  not a length/query problem, and needs the deferred reputation signal
-  below; (2) a URL with several generic security keywords packed into a
-  deep path but no query string (`/support/account/security/verify-identity`,
-  100% flagged, 100% strict PHISHING, unchanged) is driven by
-  `phishing_keywords` density plus base path length, neither of which the
-  query-string fix touches — tuning either weight down to fix this one
-  shape was rejected as likely overfitting (see the Change Standard above)
-  without the domain-reputation context to tell a real branded path from
-  an imitation of one.
-- **A domain-reputation fix remains deferred** for the two gaps above: the
-  existing 47-entry brand reference list is far too small to help (fires on
-  ~1.4% of real domains), and a larger bundled popularity list raises an
-  unresolved third-party redistribution-licensing question. Extending the
-  opt-in `--check-domain-age` RDAP path with a negative weight for old
-  domains is the next planned step — see the project's tracked
-  rearchitecture plan.
+- **Two categories in that same stress test are not fixed by the query-string
+  change above**, named rather than hidden: (1) `subdomain_count` still
+  penalizes branded subdomains like `accounts.{domain}` (69.0% flagged) and
+  `secure.{domain}` (24.2% flagged) offline — this is a domain-reputation
+  problem, not a length/query problem; (2) a URL with several generic
+  security keywords packed into a deep path but no query string
+  (`/support/account/security/verify-identity`, 100% flagged, 100% strict
+  PHISHING offline) is driven by `phishing_keywords` density plus base path
+  length, neither of which the query-string fix touches — tuning either
+  weight down to fix this one shape was rejected as likely overfitting (see
+  the Change Standard above) without domain-reputation context to tell a
+  real branded path from an imitation of one.
+- **Partially mitigated, opt-in only:** `domain_older_than_2y` (see "Domain
+  Age (RDAP)" above) fixes both branded-subdomain cases (`SUSPICIOUS`→`SAFE`
+  for real, long-established domains) and meaningfully reduces the
+  keyword-dense case (0.9291→0.7745, though not enough to clear the
+  threshold at the chosen, deliberately conservative weight). This only
+  applies when a caller opts into `--check-domain-age` and has network
+  access — **the default offline path still has both gaps, unchanged.**
+- **A full offline fix remains deferred**: the existing 47-entry brand
+  reference list is far too small to help as a general reputation signal
+  (fires on ~1.4% of real domains), and a larger bundled popularity list
+  raises an unresolved third-party redistribution-licensing question that
+  hasn't been resolved. This is the one remaining piece of the tracked
+  rearchitecture plan without a shipped fix.
 
 Issue #3 tracks a labeled evaluation benchmark for reproducible regression
 metrics. Population-level accuracy or calibration claims require a larger,
