@@ -31,9 +31,10 @@ COMMON_PRESENTATION_SUBDOMAINS = {"www", "m", "mobile"}
 # docs/BENCHMARK.md for the full methodology and numbers.
 FREE_HOSTING_SUFFIXES = (
     "pages.dev", "netlify.app", "vercel.app", "herokuapp.com", "glitch.me",
-    "repl.co", "weebly.com", "wixsite.com", "blogspot.com", "web.app",
-    "firebaseapp.com", "000webhostapp.com", "weeblysite.com",
-    "github.io", "surge.sh", "onrender.com", "workers.dev",
+    "repl.co", "replit.app", "replit.dev", "weebly.com", "wixsite.com",
+    "blogspot.com", "web.app", "firebaseapp.com", "000webhostapp.com",
+    "weeblysite.com", "github.io", "surge.sh", "onrender.com",
+    "workers.dev",
 )
 
 # Well-known domains used as typosquatting reference targets.

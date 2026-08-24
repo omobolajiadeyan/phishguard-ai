@@ -33,6 +33,11 @@ URL_WEIGHTS = {
     # redirect chain features — only present when --follow-redirects is used
     "redirect_crossed_domain": 0.65, # chain left the original domain
     "redirect_hops":           0.05, # each hop adds marginal suspicion
+    # domain-age features — only present when --check-domain-age is used.
+    # Both may be 1 at once for a very new domain; see docs/BENCHMARK.md's
+    # "Domain-Age Validation" for the measured tuning behind these weights.
+    "domain_newer_than_30d":   0.65, # registered under 30 days ago
+    "domain_newer_than_90d":   0.30, # registered under 90 days ago
 }
 
 EMAIL_WEIGHTS = {
