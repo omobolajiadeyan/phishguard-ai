@@ -36,7 +36,7 @@ import re
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 from psl import registrable_domain
 
@@ -87,8 +87,9 @@ def _parse_registration_date(payload: dict) -> datetime | None:
 
 
 def _fetch_registration_age_days(domain: str, timeout: float) -> int | None:
+    encoded_domain = quote(domain, safe="")
     request = urllib.request.Request(
-        _RDAP_BASE + domain,
+        _RDAP_BASE + encoded_domain,
         headers={"User-Agent": _USER_AGENT, "Accept": "application/rdap+json"},
     )
     try:
