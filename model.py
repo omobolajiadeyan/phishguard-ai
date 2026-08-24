@@ -40,6 +40,7 @@ URL_WEIGHTS = {
     # "Domain-Age Validation" for the measured tuning behind these weights.
     "domain_newer_than_30d":   0.65, # registered under 30 days ago
     "domain_newer_than_90d":   0.30, # registered under 90 days ago
+    "domain_older_than_2y":   -0.60, # registered 2+ years ago -- partial false-positive mitigation, opt-in only; kept moderate rather than strong, since a stronger weight risks masking the old-but-compromised-domain category docs/BENCHMARK.md's "Domain-Age Validation" already names as unaddressed. See "Domain-Age False-Positive Suppression" for the calibration.
 }
 
 EMAIL_WEIGHTS = {

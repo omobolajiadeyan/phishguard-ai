@@ -9,6 +9,14 @@ never to the domain being scored itself, so this carries none of the SSRF
 exposure that redirect.py guards against (the connection target is always
 rdap.org; the scored domain is only ever sent as a URL path segment).
 
+Registration age cuts both ways: a domain young enough raises risk
+(`domain_newer_than_30d`/`90d`), and a domain old enough lowers it
+(`domain_older_than_2y`) -- a real, if partial, mitigation for the
+false-positive gap the offline default has on branded subdomains and
+keyword-dense paths (see docs/DETECTION_MODEL.md's Known Limitations).
+It's a partial fix, not a full one: it only applies when a caller opts in
+and has network access, so the default offline path is unaffected.
+
 Every failure -- timeout, no RDAP record, rate limiting, a TLD with no
 participating registry, malformed JSON -- is caught and turned into
 "unknown" rather than raised, so a caller can never have a scan break just
@@ -50,6 +58,16 @@ _USER_AGENT = (
 # domain is also "newer than 90d"); see model.py for the weight rationale.
 _NEW_DOMAIN_DAYS = 30
 _RECENT_DOMAIN_DAYS = 90
+
+# Established-domain threshold, for the opposite direction: reducing risk
+# for domains old enough that a fresh-registration-based attack is
+# implausible. Deliberately conservative (2 years) so a legitimate but
+# fairly new business gets no bonus rather than a wrong one -- this key is
+# additive risk *reduction* only, so under-firing is the safe failure mode,
+# unlike domain_newer_than_30d/90d where under-firing would miss real
+# signal. See model.py for the weight rationale and docs/BENCHMARK.md's
+# "Domain-Age False-Positive Suppression" for the measured effect.
+_ESTABLISHED_DOMAIN_DAYS = 730
 
 # Per-process cache keyed by registrable domain, so a single .eml or batch
 # run never looks the same domain up twice -- both to spare the shared
@@ -141,4 +159,5 @@ def domain_age_features(url: str, timeout: float = 5.0) -> dict:
     return {
         "domain_newer_than_30d": int(age_days < _NEW_DOMAIN_DAYS),
         "domain_newer_than_90d": int(age_days < _RECENT_DOMAIN_DAYS),
+        "domain_older_than_2y": int(age_days >= _ESTABLISHED_DOMAIN_DAYS),
     }

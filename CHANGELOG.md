@@ -4,6 +4,28 @@ All notable changes to PhishGuard AI are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **`domain_older_than_2y` feature** (`domain_age.py`, opt-in via
+  `--check-domain-age`) — a domain registered 730+ days ago now lowers
+  risk (weight `-0.60`), the mirror image of the existing
+  `domain_newer_than_30d`/`90d` features that raise it. Added to partially
+  mitigate two false-positive shapes the query-string scoping fix below
+  doesn't touch (branded subdomains like `accounts.{domain}`, and a
+  keyword-dense path with no query string): real long-established domains
+  like `accounts.google.com/signin` and `secure.github.com/login` flip from
+  `SUSPICIOUS` to `SAFE` with this enabled. The weight was kept
+  deliberately conservative rather than maximal — old domains are also
+  exactly the category `docs/BENCHMARK.md`'s "Domain-Age Validation"
+  already names as a real, unaddressed phishing vector (compromised or
+  abused-as-a-service infrastructure), so a strong negative weight here
+  would work directly against that. **Opt-in only — the default offline
+  path is unaffected**, and one of the two false-positive shapes
+  (keyword-dense path) still isn't fully fixed even with this enabled. See
+  `docs/DETECTION_MODEL.md`'s "Domain-age false-positive suppression" and
+  `docs/BENCHMARK.md`'s "Domain-Age False-Positive Suppression" for full
+  methodology and the real-recall check this was validated against.
+
 ### Fixed
 
 - **`url_length`, `special_char_count`, and `digit_ratio` now score
