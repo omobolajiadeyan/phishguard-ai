@@ -5,7 +5,9 @@ PhishGuard AI. Counts are a dated snapshot, not claims of production adoption.
 
 ## Technical Evidence
 
-Snapshot verified on July 28, 2026:
+Snapshot re-verified on August 24, 2026 (previous snapshot: July 28, 2026),
+against `main` at commit `3baaacb` (#97, "add opt-in RDAP domain-age
+detection, fix free-hosting/packaging gaps"):
 
 - URL regression fixture: 14 public-safe samples
 - Confusion matrix: 7 true positives, 7 true negatives, 0 false positives,
@@ -13,15 +15,24 @@ Snapshot verified on July 28, 2026:
 - Fixture precision: 1.000
 - Fixture recall: 1.000
 - Fixture false-positive rate: 0.000
+- Full test suite: 192/192 passing (2 skipped), run locally via
+  `python -m unittest discover -s tests`
 - Supported Python versions in CI: 3.10, 3.11, 3.12, and 3.13
 - Security automation: CodeQL, repository policy checks, and dependency audit
 - Release engineering: five tagged releases, with installable artifacts,
-  checksums, and build provenance on recent releases
+  checksums, and build provenance on recent releases; wheel contents
+  independently rebuilt and inspected on 2026-08-24 to confirm the new
+  `domain_age.py` module is packaged (`python -m build --wheel`)
 - Integration surfaces: CLI, stable Python API, GitHub Marketplace Action,
   SARIF 2.1.0 output, browser demo, browser extension prototype, and stdlib
-  REST API server mode
+  REST API server mode (`/healthz`, `POST /v1/url`, `POST /v1/email` — all
+  smoke-tested live on 2026-08-24, including 400 rejection of a malformed
+  request body)
 - Trust-boundary coverage: saved-email authentication parsing, SARIF
-  validation, parser regression tests, and public-safe demonstration inputs
+  validation, parser regression tests, public-safe demonstration inputs, and
+  an opt-in RDAP domain-age lookup (`--check-domain-age`) that is the one
+  place the offline scanner makes a network call — always to the fixed,
+  trusted `rdap.org` bootstrap, never to the domain being scored
 
 Run the benchmark yourself:
 
@@ -33,6 +44,34 @@ These results measure the checked-in regression fixture. They are not
 population-level accuracy, calibration, or production-effectiveness claims.
 See [BENCHMARK.md](BENCHMARK.md) for the fixture limitations.
 
+## Live-Traffic Validation Evidence
+
+Re-verified on August 24, 2026 by independently re-running the model against
+a fresh OpenPhish feed and confirming the numbers reported in #97:
+
+| Metric | Offline only | + opt-in domain age |
+| --- | --- | --- |
+| Recall (flag = PHISHING or SUSPICIOUS) | 55.0% (165/300) | **65.7%** (197/300) |
+| Recall (strict PHISHING only) | 29.7% (89/300) | **32.7%** (98/300) |
+| False positives on real legitimate sites | 0/1,000 | **0/300** |
+
+This is a real-traffic sample against a rotating public feed, not a static
+fixture — see [BENCHMARK.md](BENCHMARK.md)'s "Domain-Age Validation" and
+"Live-Traffic Validation" sections for full methodology, sample-size caveats,
+and the named categories of phishing this still misses (bare-root URLs and
+old-but-compromised domains, both page-content problems no URL-only or
+registration-date feature can reach).
+
+The domain-age feature was independently smoke-tested end to end for this
+snapshot: CLI lookup against a real, long-registered domain correctly
+returned "registered 90+ days ago," and the same check surfaced
+`domain_newer_than_30d`/`domain_newer_than_90d` in the REST server's
+`POST /v1/url` response when `check_domain_age` was set. (Reviewer note: a
+Homebrew-Python local CA bundle gap — unrelated to this project's code —
+caused an initial `CERTIFICATE_VERIFY_FAILED`; setting `SSL_CERT_FILE` to
+`certifi`'s bundle resolved it. Anyone hitting the same error locally is
+looking at a Python install issue, not a PhishGuard bug.)
+
 ## Product Readiness Evidence
 
 Recent reviewer-facing improvements:
@@ -40,6 +79,7 @@ Recent reviewer-facing improvements:
 | Area | Evidence |
 | --- | --- |
 | Benchmark transparency | [BENCHMARK.md](BENCHMARK.md) records the public-safe baseline, recall improvement, and limits. |
+| Detection model | [DETECTION_MODEL.md](DETECTION_MODEL.md)'s "Domain Age (RDAP)" section documents the opt-in `--check-domain-age` feature, its weights, and its explicit blind spots. |
 | Python embedding | [PYTHON_API.md](PYTHON_API.md) documents direct `score_url` and `score_email` usage without shelling out. |
 | CI and code scanning | [GITHUB_CODE_SCANNING.md](GITHUB_CODE_SCANNING.md) provides SARIF generation and upload guidance. |
 | Browser use | [BROWSER_EXTENSION.md](BROWSER_EXTENSION.md) documents the unpacked Chrome/Edge extension for current-tab and pasted-URL checks. |
