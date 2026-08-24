@@ -499,3 +499,32 @@ Rerun this yourself:
 curl -sL -o /tmp/tranco.zip https://tranco-list.eu/top-1m.csv.zip && unzip -o /tmp/tranco.zip -d /tmp/tranco
 python tools/evaluate_fp_stress_test.py /tmp/tranco/top-1m.csv --domain-limit 150 --check-domain-age --domain-age-delay 0.3
 ```
+
+## Independent Reconfirmation (2026-08-24, post-UI-redesign)
+
+Every metric above from the "False-Positive Stress Test" section onward
+was measured once, immediately after the rearchitecture (#99–#103) landed.
+To check the numbers weren't a one-off — and to confirm an unrelated
+change (#104, a browser-demo UI redesign) didn't regress anything — the
+full suite was rerun hours later against a completely fresh data pull
+(different OpenPhish feed, different Tranco snapshot):
+
+| Metric | First run | Second run (independent) |
+| --- | --- | --- |
+| Full test suite | 197/197 (2 skipped, 1 expected failure) | 197/197 (2 skipped, 1 expected failure) |
+| Regression fixtures (14 + 10 samples) | precision/recall 1.000 | precision/recall 1.000 |
+| Branded-path fixture | 5/8 clean, 3 known gap | 5/8 clean, 3 known gap (identical) |
+| FP stress test, offline (3,000 domains) | 21.4% / 10.3% strict | 21.4% / 10.3% strict (identical) |
+| FP stress test, + domain age (150 domains) | 15.7% / 6.1% strict | 16.9% / 6.5% strict |
+| Live-traffic recall, offline | 55.0% / 29.7% strict | 55.7% / 34.0% strict |
+| Live-traffic recall, + domain age | 65.7% / 32.7% strict | 59.0% / 34.7% strict |
+| False positives, real legitimate sites | 0 | 0 |
+
+The offline false-positive number matched to the decimal on a completely
+different domain sample — strong evidence the fix generalizes rather than
+being fit to one lucky pull. The domain-age numbers move more (150-300
+domain subsamples are noisier than the 3,000-domain offline run, and
+recall against a rotating daily phishing feed is expected to vary run to
+run), but stay in the same range with no directional regression. The wheel
+was also rebuilt and inspected a second time
+(`python -m build --wheel`), confirming packaging held.

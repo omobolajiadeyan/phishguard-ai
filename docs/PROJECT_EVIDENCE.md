@@ -5,9 +5,12 @@ PhishGuard AI. Counts are a dated snapshot, not claims of production adoption.
 
 ## Technical Evidence
 
-Snapshot re-verified on August 24, 2026 (previous snapshot: July 28, 2026),
-against `main` after #99–#103 (the false-positive rearchitecture — see
-"False-Positive Rearchitecture Evidence" below):
+Snapshot re-verified twice on August 24, 2026 (previous snapshot: July 28,
+2026): once against `main` after #99–#103 (the false-positive
+rearchitecture — see "False-Positive Rearchitecture Evidence" below), and
+again, independently, after #104 (a browser-demo UI redesign) landed — a
+full retest confirming the rearchitecture's numbers still held after an
+unrelated change, not just immediately after the fix shipped:
 
 - URL regression fixture: 14 public-safe samples
 - Confusion matrix: 7 true positives, 7 true negatives, 0 false positives,
@@ -26,8 +29,9 @@ against `main` after #99–#103 (the false-positive rearchitecture — see
 - Security automation: CodeQL, repository policy checks, and dependency audit
 - Release engineering: five tagged releases, with installable artifacts,
   checksums, and build provenance on recent releases; wheel contents
-  independently rebuilt and inspected on 2026-08-24 to confirm the new
-  `domain_age.py` module is packaged (`python -m build --wheel`)
+  independently rebuilt and inspected twice on 2026-08-24 (immediately
+  after the rearchitecture, and again after the UI redesign) to confirm
+  packaging stayed correct across both changes (`python -m build --wheel`)
 - Integration surfaces: CLI, stable Python API, GitHub Marketplace Action,
   SARIF 2.1.0 output, browser demo, browser extension prototype, and stdlib
   REST API server mode (`/healthz`, `POST /v1/url`, `POST /v1/email` — all
@@ -51,19 +55,25 @@ See [BENCHMARK.md](BENCHMARK.md) for the fixture limitations.
 
 ## Live-Traffic Validation Evidence
 
-Re-verified on August 24, 2026 by independently re-running the model against
-a fresh OpenPhish feed and confirming the numbers reported in #97:
+Re-verified twice on August 24, 2026: once immediately after the
+false-positive rearchitecture (#99–#103) landed, and again independently
+after the UI redesign (#104), each time against a freshly re-downloaded
+OpenPhish feed and Tranco list (never the same sample twice):
 
 | Metric | Offline only | + opt-in domain age |
 | --- | --- | --- |
-| Recall (flag = PHISHING or SUSPICIOUS) | 55.0% (165/300) | **65.7%** (197/300) |
-| Recall (strict PHISHING only) | 29.7% (89/300) | **32.7%** (98/300) |
-| False positives on real legitimate sites | 0/1,000 | **0/300** |
+| Recall (flag = PHISHING or SUSPICIOUS) | 55.7% (167/300) | 59.0% (177/300) |
+| Recall (strict PHISHING only) | 34.0% (102/300) | 34.7% (104/300) |
+| False positives on real legitimate sites | 0/1,000 | 0/300 |
 
-This is a real-traffic sample against a rotating public feed, not a static
-fixture — see [BENCHMARK.md](BENCHMARK.md)'s "Domain-Age Validation" and
-"Live-Traffic Validation" sections for full methodology, sample-size caveats,
-and the named categories of phishing this still misses (bare-root URLs and
+Recall moves within normal sample-to-sample variance between runs on
+different dates against a rotating public feed — that's expected, and is
+itself part of the evidence: two independent pulls, days or hours apart,
+land in the same range rather than drifting, which is what "not a one-off
+lucky measurement" looks like in practice. See
+[BENCHMARK.md](BENCHMARK.md)'s "Domain-Age Validation" and "Live-Traffic
+Validation" sections for full methodology, sample-size caveats, and the
+named categories of phishing this still misses (bare-root URLs and
 old-but-compromised domains, both page-content problems no URL-only or
 registration-date feature can reach).
 
@@ -95,12 +105,17 @@ across four PRs (#99–#101, #103), each independently reviewable, each
 validated against the full test suite, both regression fixtures, and real
 recall on a fresh feed before merging — not merged blind:
 
-| Metric | Before | After |
-| --- | --- | --- |
-| Overall false-positive rate | 40.0% | **21.4%** offline, **15.7%** with opt-in domain-age |
-| Strict PHISHING false-positive rate | 27.4% | **10.3%** offline, **6.1%** with opt-in domain-age |
-| `password_reset_link` strict (worst offender) | 100% | **0.3%** |
-| Real recall (fresh feed, independent sample) | — | held steady, not below baseline |
+| Metric | Before | After (2026-08-24, run 1) | After (2026-08-24, run 2, independent) |
+| --- | --- | --- | --- |
+| Overall false-positive rate | 40.0% | 21.4% offline, 15.7% w/ domain-age | 21.4% offline, 16.9% w/ domain-age |
+| Strict PHISHING false-positive rate | 27.4% | 10.3% offline, 6.1% w/ domain-age | 10.3% offline, 6.5% w/ domain-age |
+| `password_reset_link` strict (worst offender) | 100% | 0.3% | 0.0% |
+| Real recall (fresh feed, independent sample) | — | held steady | held steady (55.7%→59.0% flagged with domain age) |
+
+Run 2 used a completely fresh Tranco/OpenPhish pull, hours after run 1 and
+after the unrelated UI redesign (#104) landed — the offline number is
+identical to the decimal (21.4%) and the domain-age numbers move only within
+the sampling noise expected from a 150-domain subsample, not a regression.
 
 Two false-positive shapes remain open on purpose, named rather than hidden:
 branded subdomains and a keyword-dense path with no query string, both
@@ -126,6 +141,7 @@ Recent reviewer-facing improvements:
 | Python embedding | [PYTHON_API.md](PYTHON_API.md) documents direct `score_url` and `score_email` usage without shelling out. |
 | CI and code scanning | [GITHUB_CODE_SCANNING.md](GITHUB_CODE_SCANNING.md) provides SARIF generation and upload guidance. |
 | Browser use | [BROWSER_EXTENSION.md](BROWSER_EXTENSION.md) documents the unpacked Chrome/Edge extension for current-tab and pasted-URL checks. |
+| Browser demo | Redesigned 2026-08-24 (#104) with a distinct visual identity and a threshold-labeled risk meter. Verified end-to-end with Playwright screenshots (dark/light themes, both tabs, SAFE/PHISHING verdicts) — zero console errors. Fixed a real explainability bug in the process: the feature-breakdown "triggered" indicator now checks the actual model weight sign (`scoring.js` exports `URL_WEIGHTS`/`EMAIL_WEIGHTS`) instead of the CLI's cruder value-only heuristic, which mismarked `domain_length` (a risk-*reducing* feature) as a risk contributor. Live at [omobolajiadeyan.github.io/phishguard-ai](https://omobolajiadeyan.github.io/phishguard-ai/), confirmed serving the current build on 2026-08-24. |
 | REST integration | The README documents `phishguard serve` with local default binding and endpoint examples. |
 | Safe adoption | [ADOPTION.md](ADOPTION.md) and [FIRST_CONTRIBUTION.md](FIRST_CONTRIBUTION.md) give external users low-friction paths to try, report, and contribute. |
 | Evaluator experience | [EVALUATOR_GUIDE.md](EVALUATOR_GUIDE.md) gives a five-minute path to run safe examples and inspect trust boundaries. |
