@@ -34,6 +34,12 @@ testing. The feature excludes short labels, non-`.example` hosts, multi-label
 hosts, hyphenated labels, Unicode labels, and punycode labels so it does not
 penalize ordinary long production domains.
 
+Two more indicators are available only when a caller opts in and network
+access is available (`--check-domain-age` / `check_domain_age`), and are
+never part of the default offline scan: `domain_newer_than_30d` and
+`domain_newer_than_90d`, from `domain_age.py`'s RDAP lookup. See "Domain
+Age (RDAP)" below.
+
 IDN indicators are contextual signals with deliberately modest weights.
 Internationalized domains are legitimate and are not classified as phishing
 from either indicator alone. Confusable-character and brand-impersonation
@@ -150,6 +156,65 @@ from the redirect signal — confirming the fix removed exactly the intended
 false-positive contribution rather than masking other signals. Regression
 coverage: `tests/test_psl.py`.
 
+## Domain Age (RDAP)
+
+`--check-domain-age` (CLI: `url`, `eml`; REST: `POST /v1/url`'s
+`check_domain_age`) looks up the registrable domain's registration date via
+RDAP (`domain_age.py`) and adds two features: `domain_newer_than_30d`
+(weight `0.65`) and `domain_newer_than_90d` (weight `0.30`, additive with
+the first for a domain under 30 days old). Both are absent — not
+zero — when the age can't be determined, so an unknown age contributes no
+risk either way, the same convention `redirect_hops` already uses.
+
+This closes a gap the project's own live-traffic validation quantified
+directly: of the phishing URLs the string-only model still misses, most are
+bare-root URLs with no path, where every existing feature (keywords, TLD,
+entropy, free-hosting) has nothing to match against. Registration recency
+is a domain-level signal that exists whether or not the URL has a path, so
+it reaches exactly the cases the other features structurally can't.
+
+**Deliberately not part of the default scan or `batch`.** Domain age is the
+only feature in PhishGuard that makes a network call to a *third party*
+(the free `rdap.org` bootstrap) rather than to the URL being scored. Two
+consequences follow directly, not as bugs:
+
+- It's opt-in, so PhishGuard's offline promise stays true by default.
+- It's excluded from `batch`, because `rdap.org` rate-limits aggressively
+  (429s were observed after roughly ten rapid lookups during development)
+  and scanning a URL list would hammer a shared public service. Bulk
+  research use should go through
+  `tools/evaluate_live_traffic_benchmark.py --check-domain-age
+  --domain-age-delay`, which paces its own requests.
+
+Every RDAP failure mode — timeout, 404 (no participating registry for that
+TLD), 429, malformed JSON, no `registration` event in the response —
+degrades to "unknown" rather than raising, and results are cached per
+registrable domain for the life of the process so a single `.eml` scan or
+benchmark run never looks the same domain up twice.
+
+**Weight rationale.** `0.65`/`0.30` sit in the same range as the model's
+other strong single-signal features (`suspicious_tld` `0.70`,
+`on_free_hosting_platform` `0.70`, `has_ip_address` `0.90`) rather than
+being decisive on their own — a newly-registered domain with no other
+suspicious characteristic lands in `SUSPICIOUS`, not an automatic
+`PHISHING`, consistent with the model's existing "supporting evidence, not
+proof" posture toward every other single feature (see the email
+authentication section above for the same philosophy applied to SPF/DKIM/DMARC).
+
+**Live-traffic validation (2026-08-24):** re-running
+`tools/evaluate_live_traffic_benchmark.py` against a fresh OpenPhish feed
+and the top 300 Tranco domains, with domain-age enabled:
+
+| Metric | Offline only | + domain age |
+|---|---|---|
+| Recall (flag = PHISHING or SUSPICIOUS) | 55.0% (165/300) | **65.7%** (197/300) |
+| Recall (strict PHISHING only) | 29.7% (89/300) | **32.7%** (98/300) |
+| False positives on real legitimate sites | 0/1,000 | **0/300** |
+
+See `docs/BENCHMARK.md`'s "Domain-Age Validation" section for the full
+methodology, the sample-size caveat on the false-positive row, and what
+this still doesn't fix.
+
 ## Change Standard
 
 A detection change should include:
@@ -166,13 +231,25 @@ cannot distinguish an improvement from overfitting.
 
 ## Known Limitations
 
-- The model does not fetch pages, follow redirects, or inspect certificates.
-- It does not query DNS, domain age, blocklists, or threat intelligence.
+- The model does not fetch page content or inspect TLS certificates. It can
+  optionally follow redirects (`--follow-redirects`) and look up domain
+  registration age via RDAP (`--check-domain-age`), but both are opt-in and
+  off by default; the offline default scans the URL string alone.
+- It does not query DNS, blocklists, or threat intelligence, and domain age
+  is best-effort against one free, rate-limited third-party bootstrap —
+  many lookups legitimately resolve to "unknown" rather than an age.
 - It parses supplied authentication results but does not independently
   validate SPF, DKIM, DMARC, DNS policy, or cryptographic signatures.
 - Unicode confusable-character and brand-impersonation matching are not implemented.
 - The current regression set is small and is not a population-level accuracy
-  benchmark.
+  benchmark. The live-traffic validations (free-hosting, domain age) are
+  larger and use real, dated samples, but are still snapshots, not a
+  permanent accuracy claim — see docs/BENCHMARK.md.
+- Even with domain age enabled, roughly a third of missed live phishing
+  samples are on domains many months or years old (compromised or
+  abused-as-a-service infrastructure, not freshly registered) — no feature
+  in this model addresses that category. See docs/BENCHMARK.md's
+  "Domain-Age Validation" for the specific example found during this audit.
 
 Issue #3 tracks a labeled evaluation benchmark for reproducible regression
 metrics. Population-level accuracy or calibration claims require a larger,

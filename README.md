@@ -81,6 +81,11 @@ validated as a statistically trained model.
 - Phishing keyword density (`verify`, `suspended`, `account`, `secure`, etc.)
 - Subdomain depth, path depth, digit ratio, special character density
 - Punycode and Unicode hostname indicators, weighted conservatively as context
+- Free/throwaway hosting platforms (`pages.dev`, `netlify.app`, `replit.app`, etc.)
+- Typosquatting distance against a list of commonly impersonated brands
+- Domain registration age via RDAP — **opt-in only** (`--check-domain-age`),
+  since it's the one feature that calls a third-party service instead of
+  scoring the URL string alone. See [Domain Age](#domain-age-opt-in) below.
 
 **Email features analyzed:**
 - Urgency language (`action required`, `account suspended`, `verify now`)
@@ -198,6 +203,9 @@ phishguard url "http://paypa1-secure-login.xyz/verify"
 # Analyze with feature breakdown
 phishguard url "https://google.com" --verbose
 
+# Weight newly-registered domains as more suspicious (opt-in, needs network access)
+phishguard url "http://freshly-registered.example" --check-domain-age --verbose
+
 # Analyze an email
 phishguard email \
   --subject "URGENT: Your account has been suspended" \
@@ -233,6 +241,31 @@ See [common use cases](docs/USE_CASES.md) for CI scanning, SOC triage,
 education demos, email-authentication experiments, and benchmark work.
 See the [detection model documentation](docs/DETECTION_MODEL.md) for feature
 semantics, limitations, and the evidence required for scoring changes.
+
+## Domain Age (Opt-In)
+
+`--check-domain-age` looks up a URL's registration date via RDAP and weights
+recently-registered domains as more suspicious — a signal no other feature
+here can provide, since it depends on domain history rather than the URL
+string itself. It's the one PhishGuard feature that calls a third party (the
+free `rdap.org` RDAP bootstrap), so it's off by default and not available on
+`batch`, since that free service rate-limits aggressively under repeated
+lookups. Use it on single URLs or `.eml` files you actually want a second
+opinion on:
+
+```bash
+phishguard url "http://freshly-registered.example" --check-domain-age --verbose
+phishguard eml suspicious.eml --check-domain-age
+```
+
+Every lookup failure (timeout, no RDAP record for that TLD, rate limiting)
+degrades to "no signal" rather than an error, and results are cached per
+domain for the run so a `.eml` file with many links to the same domain only
+triggers one lookup. See
+[the detection model's Domain Age section](docs/DETECTION_MODEL.md#domain-age-rdap)
+for the weight rationale and a live-traffic validation, and
+`tools/evaluate_live_traffic_benchmark.py --check-domain-age` to reproduce it
+yourself with a rate-limit-friendly delay.
 
 ## Browser Demo
 
@@ -279,7 +312,9 @@ phishguard serve --port 8765
 # Health check
 curl http://127.0.0.1:8765/healthz
 
-# Score a URL (add "follow_redirects": N to resolve short links first)
+# Score a URL (add "follow_redirects": N to resolve short links first,
+# or "check_domain_age": true to weight recently-registered domains —
+# see the Domain Age section above for what that trades away)
 curl -X POST http://127.0.0.1:8765/v1/url \
   -H "Content-Type: application/json" \
   -d '{"url": "http://paypa1-secure-login.xyz/verify"}'
@@ -343,10 +378,13 @@ sanitization, and reporting rules.
 
 ```
 phishguard-ai/
-|-- phishguard.py    # CLI entrypoint - commands: url, email, batch
+|-- phishguard.py    # CLI entrypoint - commands: url, email, eml, batch, serve
 |-- email_auth.py    # SPF, DKIM, and DMARC result parsing
 |-- features.py      # Feature extraction (URL + email)
 |-- model.py         # Weighted scoring model + sigmoid normalisation
+|-- redirect.py       # Optional SSRF-safe HTTP redirect-chain resolution
+|-- domain_age.py    # Optional RDAP domain-age lookup
+|-- server.py        # Optional REST API + browser-demo server
 |-- reporting.py     # Native JSON and SARIF 2.1.0 serialization
 |-- data/
 |   `-- urls.txt     # Sample URLs for batch testing

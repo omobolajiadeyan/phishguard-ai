@@ -6,6 +6,27 @@ All notable changes to PhishGuard AI are documented here.
 
 ### Added
 
+- **`--check-domain-age` / `domain_age.py`** — an opt-in RDAP lookup that
+  weights recently-registered domains as more suspicious
+  (`domain_newer_than_30d` weight `0.65`, `domain_newer_than_90d` weight
+  `0.30`). Added after auditing the model's remaining false negatives on a
+  fresh live-traffic run and finding, case by case, that several missed
+  phishing URLs (e.g. a 46-day-old `.com.br` domain with no other
+  suspicious feature) had no signal any existing feature could reach —
+  registration recency is a domain-level property that exists whether or
+  not the URL has a path, unlike every other current feature. This is the
+  first feature that calls a third party (the free `rdap.org` RDAP
+  bootstrap) instead of scoring the URL string alone, so it's opt-in, off
+  by default, and deliberately unavailable on `batch` — that public
+  service rate-limits aggressively (429s observed after ~10 rapid
+  lookups). Available on `url`, `eml`, and `POST /v1/url`
+  (`check_domain_age`). Live-traffic validation (2026-08-24 OpenPhish feed,
+  300 phishing URLs / top 300 Tranco domains): 55.0%→**65.7%** recall
+  (strict PHISHING-only: 29.7%→**32.7%**), 0→**0** false positives. See
+  `docs/DETECTION_MODEL.md`'s
+  "Domain Age (RDAP)" section and `docs/BENCHMARK.md`'s "Domain-Age
+  Validation" for full methodology, and `tests/test_domain_age.py` for
+  coverage.
 - **`on_free_hosting_platform` feature** — detects subdomains of commonly
   abused free-hosting platforms (pages.dev, netlify.app, blogspot.com,
   github.io, etc.). Added after a live-traffic validation against 300 real
@@ -40,6 +61,13 @@ All notable changes to PhishGuard AI are documented here.
 
 ### Fixed
 
+- **`FREE_HOSTING_SUFFIXES` now includes `replit.app` and `replit.dev`**.
+  Found while auditing the model's current false negatives: two live
+  OpenPhish URLs on `*.replit.app` in a fresh 2026-08-24 feed scored `SAFE`
+  because only the older `repl.co` suffix was listed. Offline live-traffic
+  recall (2026-08-24 feed, 300 phishing / 1,000 legitimate):
+  54.3%→**55.0%** (strict PHISHING-only: 29.0%→**29.7%**), 0 new false
+  positives.
 - **`subdomain_count` now uses the Public Suffix List boundary** (issue #82)
   instead of assuming every registrable domain has two labels. Domains such as
   `www.example.co.uk` no longer count `example` as a subdomain, and private

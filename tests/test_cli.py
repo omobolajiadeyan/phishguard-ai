@@ -49,6 +49,44 @@ class CliTests(unittest.TestCase):
             output.getvalue(),
         )
 
+    def test_check_domain_age_prints_unknown_when_lookup_fails(self):
+        output = StringIO()
+
+        with patch("phishguard.domain_age_features", return_value={}):
+            with redirect_stdout(output):
+                phishguard.analyze_url(
+                    "https://example.com",
+                    plain=True,
+                    check_domain_age=True,
+                )
+
+        self.assertIn("registration age unknown", output.getvalue())
+
+    def test_check_domain_age_prints_recency_when_known(self):
+        output = StringIO()
+
+        with patch(
+            "phishguard.domain_age_features",
+            return_value={"domain_newer_than_30d": 1, "domain_newer_than_90d": 1},
+        ):
+            with redirect_stdout(output):
+                result = phishguard.analyze_url(
+                    "https://example.com",
+                    plain=True,
+                    check_domain_age=True,
+                )
+
+        self.assertIn("registered under 30 days ago", output.getvalue())
+        self.assertEqual(result["features"]["domain_newer_than_30d"], 1)
+
+    def test_check_domain_age_is_off_by_default(self):
+        with patch("phishguard.domain_age_features") as mocked:
+            with redirect_stdout(StringIO()):
+                result = phishguard.analyze_url("https://example.com", plain=True)
+
+        mocked.assert_not_called()
+        self.assertNotIn("domain_newer_than_30d", result["features"])
+
     def assert_plain_output(self, output):
         self.assertTrue(output.isascii(), output)
         self.assertNotIn("\033[", output)

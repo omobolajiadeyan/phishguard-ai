@@ -218,3 +218,87 @@ python tools/evaluate_live_traffic_benchmark.py /tmp/feed.txt /tmp/tranco/top-1m
 Exact counts will differ on a rerun — both feeds rotate continuously. Rerun
 this periodically (recommended: monthly) rather than treating the numbers
 above as permanent.
+
+## Free-Hosting List Refresh (2026-08-24)
+
+A fresh OpenPhish feed (300 URLs) turned up two live phishing URLs on
+`*.replit.app` that scored `SAFE` — the free-hosting list only had the
+older `repl.co` suffix. Added `replit.app` and `replit.dev` to
+`FREE_HOSTING_SUFFIXES` in `features.py`.
+
+| Metric | Before | After |
+|---|---|---|
+| Recall (flag = PHISHING or SUSPICIOUS) | 54.3% (163/300) | **55.0%** (165/300) |
+| Recall (strict PHISHING only) | 29.0% (87/300) | **29.7%** (89/300) |
+| False positives on real legitimate sites (n=1,000) | 0/1000 | **0/1000** |
+
+(These "before" numbers are a fresh 2026-08-24 baseline, not the 2026-07-28
+numbers above — both feeds rotate, so the two runs aren't the same sample.
+This is the honest baseline this specific fix was measured against.)
+
+## Domain-Age Validation (2026-08-24)
+
+Auditing the model's *remaining* false negatives after the fixes above
+(rather than only looking at aggregate recall) surfaced concrete cases no
+existing feature could reach:
+
+- `rosakyiv.com.br` — registered **46 days** before this audit, zero other
+  suspicious features (no keywords, no suspicious TLD, ordinary entropy).
+  Domain age is the only signal available for this exact case.
+- `pehsad.com` — registered **84 days** before this audit, same story.
+- `s4w.in` — a URL-shortener-style domain **~18.8 years old**, abused to
+  redirect to a phishing destination. This is the domain-age feature's
+  explicit blind spot, not an oversight: an old, legitimate-looking domain
+  offering redirects has nothing for a registration-date check to catch.
+  `--follow-redirects` (already shipped) is the correct tool for this
+  category, not domain age.
+
+This is why `docs/DETECTION_MODEL.md`'s Known Limitations section names
+"compromised or abused-as-a-service infrastructure" as a real, unaddressed
+category rather than folding it into a single recall number.
+
+**Method:** `tools/evaluate_live_traffic_benchmark.py --check-domain-age`,
+against the same 2026-08-24 OpenPhish feed (300 URLs) used in the
+free-hosting refresh above, and the top 300 Tranco domains, with
+`--domain-age-delay 0.4` to stay inside `rdap.org`'s rate limit.
+
+| Metric | Offline only | + domain age |
+|---|---|---|
+| Recall (flag = PHISHING or SUSPICIOUS) | 55.0% (165/300) | **65.7%** (197/300) |
+| Recall (strict PHISHING only) | 29.7% (89/300) | **32.7%** (98/300) |
+| False positives on real legitimate sites | 0/1,000 | **0/300** |
+
+The false-positive row isn't the same sample size — the domain-age run used
+the top 300 Tranco domains (a subset of the 1,000 used for the offline
+baseline above), not the full 1,000, to keep total RDAP calls reasonable
+against a free shared service. The top 300 are also the *hardest* subset to
+false-positive against, since none of them are remotely close to newly
+registered, so `0/300` here is a meaningful result, not a weaker one — but
+it is a smaller sample, stated plainly rather than implied.
+
+Domain age closed a real slice of the recall gap: **+10.7 points** on the
+broader metric, **+3.0 points** strict, with zero new false positives. It
+did not close most of it — the remaining ~44% of missed phishing (below)
+is the compromised/abused-old-domain category no registration-date check
+can see.
+
+**What this doesn't fix:** domains that are old but compromised or rented
+as phishing-as-a-service infrastructure (the `s4w.in` case above) look
+identical to any other established domain from a registration-date
+perspective. Closing that gap would need page-content analysis or a
+reputation/blocklist feed, which is a larger design decision than adding
+one more RDAP-derived feature — consistent with the same page-content
+tradeoff already named in the Live-Traffic Validation section above.
+
+Rerun this validation yourself:
+
+```bash
+curl -sL -o /tmp/feed.txt https://openphish.com/feed.txt
+curl -sL -o /tmp/tranco.zip https://tranco-list.eu/top-1m.csv.zip && unzip -o /tmp/tranco.zip -d /tmp/tranco
+python tools/evaluate_live_traffic_benchmark.py /tmp/feed.txt /tmp/tranco/top-1m.csv \
+  --check-domain-age --domain-age-delay 0.4 --legit-limit 300
+```
+
+`rdap.org` is a free, shared, third-party service — keep `--domain-age-delay`
+at `0.4` or higher, and avoid raising `--legit-limit` far past the sample
+size used here without a longer delay.

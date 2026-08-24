@@ -19,6 +19,7 @@ import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+from domain_age import domain_age_features
 from model import classify, score_email, score_url
 from redirect import follow_redirects
 
@@ -188,19 +189,31 @@ class PhishGuardRequestHandler(BaseHTTPRequestHandler):
             )
             return
 
+        check_age = data.get("check_domain_age", False)
+        if not isinstance(check_age, bool):
+            self._send_json(
+                400, {"error": "'check_domain_age' must be a boolean"}
+            )
+            return
+
         url = data["url"]
         chain_info = {}
+        extra: dict = {}
         if hops > 0:
             chain_info = follow_redirects(url, max_hops=hops)
             final_url = chain_info["final_url"]
-            extra = {
-                "redirect_hops": chain_info["hops"],
-                "redirect_crossed_domain": int(chain_info["crossed_domain"]),
-            }
-            probability, features = score_url(final_url, extra_features=extra)
+            extra["redirect_hops"] = chain_info["hops"]
+            extra["redirect_crossed_domain"] = int(chain_info["crossed_domain"])
         else:
             final_url = url
-            probability, features = score_url(url)
+
+        if check_age:
+            # Bounded well under CLIENT_SOCKET_TIMEOUT so a slow or
+            # rate-limited RDAP lookup can't stall the response past the
+            # client's own socket timeout; degrades to "unknown" either way.
+            extra.update(domain_age_features(final_url, timeout=4.0))
+
+        probability, features = score_url(final_url, extra_features=extra or None)
 
         response = {
             "url": url,

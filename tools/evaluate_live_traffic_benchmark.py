@@ -24,12 +24,14 @@ from __future__ import annotations
 import argparse
 import csv
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from domain_age import domain_age_features
 from model import classify, score_url
 
 
@@ -51,8 +53,18 @@ def load_legitimate_urls(path: str | Path, limit: int) -> list[str]:
     return urls
 
 
-def evaluate(urls: list[str]) -> list[str]:
-    return [classify(score_url(url)[0]) for url in urls]
+def evaluate(
+    urls: list[str], check_domain_age: bool = False, delay: float = 0.0
+) -> list[str]:
+    verdicts = []
+    for i, url in enumerate(urls):
+        extra = domain_age_features(url) if check_domain_age else None
+        verdicts.append(classify(score_url(url, extra_features=extra)[0]))
+        # Only sleep between requests that actually hit the network, and
+        # never after the last one.
+        if check_domain_age and delay > 0 and i < len(urls) - 1:
+            time.sleep(delay)
+    return verdicts
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -63,6 +75,19 @@ def main(argv: list[str] | None = None) -> int:
         "--legit-limit", type=int, default=1000,
         help="how many top-ranked legitimate domains to sample (default: 1000)",
     )
+    parser.add_argument(
+        "--check-domain-age", action="store_true",
+        help=(
+            "Also score with RDAP-derived domain-age features. Makes one "
+            "network call per unique registrable domain against the public "
+            "rdap.org bootstrap -- use --domain-age-delay to stay polite to "
+            "that shared, rate-limited service on a large --legit-limit."
+        ),
+    )
+    parser.add_argument(
+        "--domain-age-delay", type=float, default=0.3, metavar="SECONDS",
+        help="Delay between RDAP lookups when --check-domain-age is set (default: 0.3)",
+    )
     args = parser.parse_args(argv)
 
     phishing_urls = load_phishing_urls(args.phishing_feed)
@@ -72,8 +97,8 @@ def main(argv: list[str] | None = None) -> int:
         print("error: both input files must contain at least one entry", file=sys.stderr)
         return 1
 
-    phish_verdicts = evaluate(phishing_urls)
-    legit_verdicts = evaluate(legit_urls)
+    phish_verdicts = evaluate(phishing_urls, args.check_domain_age, args.domain_age_delay)
+    legit_verdicts = evaluate(legit_urls, args.check_domain_age, args.domain_age_delay)
 
     flagged = {"PHISHING", "SUSPICIOUS"}
     true_positive = sum(1 for v in phish_verdicts if v in flagged)
@@ -97,6 +122,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"phishing samples: {len(phishing_urls)}  (source: {args.phishing_feed})")
     print(f"legitimate samples: {len(legit_urls)}  (source: {args.legit_domains_csv})")
+    print(f"domain-age features: {'on' if args.check_domain_age else 'off'}")
     print()
     print(
         "confusion_matrix (flag = PHISHING or SUSPICIOUS): "
