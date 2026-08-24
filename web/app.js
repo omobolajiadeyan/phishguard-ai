@@ -79,6 +79,28 @@ function formatFeatureValue(name, value) {
   return String(value);
 }
 
+// A feature "triggered" the score if it's actually pushing the result
+// toward PHISHING, not just because its value happens to be truthy.
+// phishguard.py's CLI marks any value > 0 (except has_https, hardcoded
+// as a special case) -- but domain_length also carries a negative weight,
+// so that heuristic mismarks it too. Checking the real weight sign from
+// scoring.js's exported URL_WEIGHTS/EMAIL_WEIGHTS is both simpler and
+// correct for every feature, no special-casing needed. Categorical
+// email-auth fields (spf/dkim/dmarc_result) aren't in either weights
+// table -- the numeric *_auth_risk features are -- so those fall back to
+// a plain fail/softfail check for a still-useful visual.
+function isTriggered(name, value) {
+  const weights = PhishGuardScoring.URL_WEIGHTS || {};
+  const emailWeights = PhishGuardScoring.EMAIL_WEIGHTS || {};
+  const weight = name in weights ? weights[name] : emailWeights[name];
+  if (typeof weight === "number") {
+    const numericValue = typeof value === "boolean" ? Number(value) : value;
+    return typeof numericValue === "number" && weight * numericValue > 0;
+  }
+  if (typeof value === "string") return value === "fail" || value === "softfail";
+  return false;
+}
+
 const tabs = document.querySelectorAll(".tab");
 const panels = {
   url: document.getElementById("panel-url"),
@@ -136,10 +158,19 @@ function renderFeatures(features) {
   featuresTableBody.textContent = "";
   for (const [name, value] of Object.entries(features)) {
     const row = document.createElement("tr");
+    if (isTriggered(name, value)) row.classList.add("triggered");
+
     const nameCell = document.createElement("td");
-    nameCell.textContent = formatFeatureName(name);
+    const dot = document.createElement("span");
+    dot.className = "feature-dot";
+    dot.setAttribute("aria-hidden", "true");
+    const label = document.createElement("span");
+    label.textContent = formatFeatureName(name);
+    nameCell.append(dot, label);
+
     const valueCell = document.createElement("td");
     valueCell.textContent = formatFeatureValue(name, value);
+
     row.append(nameCell, valueCell);
     featuresTableBody.appendChild(row);
   }
@@ -157,7 +188,7 @@ function renderResult({ probability, features }) {
   const pct = Math.round(probability * 1000) / 10;
   probabilityText.textContent = `${pct}% phishing probability`;
   probabilityFill.style.width = `${Math.min(100, Math.max(0, pct))}%`;
-  probabilityFill.className = `bar-fill ${verdictClass}`;
+  probabilityFill.className = `meter-fill ${verdictClass}`;
 
   renderFeatures(features || {});
   resultEl.classList.remove("hidden");
