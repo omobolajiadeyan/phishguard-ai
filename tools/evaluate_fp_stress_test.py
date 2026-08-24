@@ -62,12 +62,15 @@ def load_domains(path: str | Path, limit: int) -> list[str]:
     domains = []
     with open(path, newline="", encoding="utf-8") as handle:
         reader = csv.reader(handle)
-        for i, row in enumerate(reader):
-            if i >= limit:
+        for row in reader:
+            if len(domains) >= limit:
                 break
             if len(row) < 2:
                 continue
-            domains.append(row[1].strip().lower())
+            domain = row[1].strip().lower()
+            if not domain:
+                continue
+            domains.append(domain)
     return domains
 
 
