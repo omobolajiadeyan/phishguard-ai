@@ -67,6 +67,47 @@ class UrlScoringTests(unittest.TestCase):
         self.assertEqual(features["phishing_keywords"], 2)
 
 
+class RealisticSecurityUrlFalsePositiveTests(unittest.TestCase):
+    """Regression guard for the false-positive gap found by the 2026-08-24
+    stress test (docs/BENCHMARK.md's "False-Positive Stress Test",
+    tools/evaluate_fp_stress_test.py): every prior "known legitimate" test
+    case above is a bare root domain or a trivial path, so none of them
+    exercised the URL shapes a real login, verification, or password-reset
+    flow actually produces -- which is also exactly the shape a phishing
+    page is built to imitate. These cases are drawn directly from
+    data/branded_path_benchmark_urls.jsonl.
+
+    These currently FAIL against the unfixed model (as of this commit),
+    by design -- CONTRIBUTING.md's guidance is to add failing regression
+    tests before the fix that turns them green, so the bug is proven
+    reproducible in the permanent suite rather than only in a one-off
+    script. A rearchitecture PR is expected to fix these; do not weaken
+    the assertions to make them pass without an actual scoring change.
+    """
+
+    def test_realistic_security_urls_on_real_domains_are_not_phishing(self):
+        urls = (
+            "https://contoso.example/login",
+            "https://www.fabrikam.example/signin",
+            "https://northwind.example/account/login",
+            "https://contoso.example/account/verify?token=a1b2c3d4e5f67890",
+            "https://fabrikam.example/password/reset?token=b6c7d8e9f0a1b2c3&redirect=https://fabrikam.example/dashboard",
+            "https://accounts.northwind.example/signin",
+            "https://secure.contoso.example/login",
+            "https://fabrikam.example/support/account/security/verify-identity",
+        )
+
+        for url in urls:
+            with self.subTest(url=url):
+                probability, _ = score_url(url)
+                self.assertNotEqual(
+                    classify(probability),
+                    "PHISHING",
+                    f"{url} scored {probability} -- an ordinary security-relevant "
+                    "path should not alone be enough to reach the highest verdict",
+                )
+
+
 class EmailScoringTests(unittest.TestCase):
     def test_normal_email_is_safe(self):
         probability, _ = score_email(

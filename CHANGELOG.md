@@ -6,6 +6,15 @@ All notable changes to PhishGuard AI are documented here.
 
 ### Added
 
+- **`data/branded_path_benchmark_urls.jsonl` + `RealisticSecurityUrlFalsePositiveTests`**
+  — a permanent regression guard for the false-positive gap found by
+  `tools/evaluate_fp_stress_test.py`: 8 `.example`-suffixed synthetic cases
+  covering the exact realistic login/verify/reset/subdomain URL shapes that
+  stress test found false-positiving at scale on real domains, plus a
+  `tests/test_model.py` test asserting they don't classify as PHISHING.
+  Added deliberately failing (3/8 currently fail) per this project's
+  test-before-fix convention — a following PR fixes the underlying scoring
+  to turn them green. No scoring behavior changed in this commit.
 - **`tools/evaluate_fp_stress_test.py`** — every existing false-positive
   number in this project's evidence docs is measured against bare root URLs
   (`https://{domain}/`), which is the easiest possible case. This tool

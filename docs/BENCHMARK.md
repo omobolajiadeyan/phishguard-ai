@@ -25,6 +25,22 @@ reserved IP addresses, public documentation URLs, and clearly synthetic
 credential lures. Each JSON Lines record has a stable ID, label, URL,
 rationale, and provenance category.
 
+A second checked-in fixture, `data/branded_path_benchmark_urls.jsonl`, is
+scoped separately and deliberately: it exists to lock in the "False-Positive
+Stress Test" finding above as a permanent regression guard, using
+`.example`-suffixed synthetic domains with the exact realistic
+login/verify/reset/subdomain URL shapes that stress test found to
+false-positive at scale. Run it the same way:
+
+```bash
+python tools/evaluate_url_benchmark.py data/branded_path_benchmark_urls.jsonl
+```
+
+Every record in it is labeled `legitimate` — there is no phishing side to
+this fixture, since its only purpose is to catch this specific false-positive
+regression, not to measure recall. `tests/test_model.py`'s
+`RealisticSecurityUrlFalsePositiveTests` asserts the same cases directly.
+
 These are regression-fixture metrics. The fixture is deliberately small and
 does not represent real traffic, geographic diversity, current campaigns, or
 the prevalence of phishing. Results must not be described as population-level
