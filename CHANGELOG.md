@@ -43,6 +43,19 @@ All notable changes to PhishGuard AI are documented here.
 
 ### Fixed
 
+- **`domain_age.py`'s RDAP request re-validates the domain at the network
+  call itself** (`_fetch_registration_age_days`), not just in its caller.
+  CodeQL alert #16 (`py/partial-ssrf`) stayed open even after #102's
+  `quote()`-encoding fix, because the format validation
+  (`_is_valid_registrable_domain`) happened in `lookup_domain_age_days`,
+  a different function than the actual `urlopen` sink — a cross-function
+  taint flow CodeQL's static analysis (correctly) didn't trust as safe.
+  The request target was never attacker-controlled (`_RDAP_BASE` is a
+  hardcoded constant; only the path segment after it varies), so full
+  SSRF was never possible, but the sink now validates on its own,
+  defense-in-depth, regardless of what future caller reaches it. New
+  test: `test_fetch_rejects_malformed_domain_without_a_network_call`
+  asserts path-manipulation-shaped input never reaches `urlopen`.
 - **`url_length`, `special_char_count`, and `digit_ratio` now score
   `scheme://host/path` only, excluding the query string** (`url_length`
   additionally capped at 80 characters). Previously scored against the

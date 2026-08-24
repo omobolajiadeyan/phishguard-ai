@@ -100,6 +100,27 @@ class DomainAgeLookupTests(unittest.TestCase):
             domain_age.lookup_domain_age_days("https://b.example.com/two")
         self.assertEqual(mocked.call_count, 1)
 
+    def test_fetch_rejects_malformed_domain_without_a_network_call(self):
+        # _fetch_registration_age_days() is the actual network sink -- it
+        # must not trust its caller's validation (lookup_domain_age_days()
+        # already checks this before registrable_domain()'s output reaches
+        # here) since a future caller could reach it directly. Guards
+        # against CodeQL alert #16 (py/partial-ssrf) regressing: a domain
+        # string that could manipulate the request path must never reach
+        # urlopen at all, encoded or not.
+        malformed = [
+            "evil.com/../../admin",
+            "evil.com#@rdap.org",
+            "evil.com?x=1",
+            "",
+        ]
+        for domain in malformed:
+            with self.subTest(domain=domain):
+                with patch("urllib.request.urlopen") as mocked:
+                    result = domain_age._fetch_registration_age_days(domain, 5.0)
+                mocked.assert_not_called()
+                self.assertIsNone(result)
+
 
 class DomainAgeFeatureTests(unittest.TestCase):
     def setUp(self):

@@ -105,6 +105,16 @@ def _parse_registration_date(payload: dict) -> datetime | None:
 
 
 def _fetch_registration_age_days(domain: str, timeout: float) -> int | None:
+    # Re-validated here, at the network call itself, rather than trusting
+    # the caller's already-done check (lookup_domain_age_days() validates
+    # too, before registrable_domain()'s output ever reaches this
+    # function) -- this is the actual SSRF-relevant boundary, so it should
+    # be safe on its own regardless of what future caller reaches it. The
+    # regex only allows DNS-label characters, so this also makes the
+    # quote() below belt-and-suspenders rather than the only guard: no
+    # "/", "?", "#", "@", or control character can reach the request URL.
+    if not _is_valid_registrable_domain(domain):
+        return None
     encoded_domain = quote(domain, safe="")
     request = urllib.request.Request(
         _RDAP_BASE + encoded_domain,
