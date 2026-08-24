@@ -6,8 +6,8 @@ PhishGuard AI. Counts are a dated snapshot, not claims of production adoption.
 ## Technical Evidence
 
 Snapshot re-verified on August 24, 2026 (previous snapshot: July 28, 2026),
-against `main` at commit `3baaacb` (#97, "add opt-in RDAP domain-age
-detection, fix free-hosting/packaging gaps"):
+against `main` after #99–#103 (the false-positive rearchitecture — see
+"False-Positive Rearchitecture Evidence" below):
 
 - URL regression fixture: 14 public-safe samples
 - Confusion matrix: 7 true positives, 7 true negatives, 0 false positives,
@@ -15,7 +15,12 @@ detection, fix free-hosting/packaging gaps"):
 - Fixture precision: 1.000
 - Fixture recall: 1.000
 - Fixture false-positive rate: 0.000
-- Full test suite: 192/192 passing (2 skipped), run locally via
+- A second regression fixture (`data/branded_path_benchmark_urls.jsonl`, 8
+  branded-path samples) guards the false-positive fix specifically: 5/8
+  clean, 3/8 a known, named, still-open gap (see below) — not hidden by a
+  weakened test.
+- Full test suite: 197/197 passing (2 skipped, 1 deliberately tracked
+  `expectedFailure` for the named open gap), run locally via
   `python -m unittest discover -s tests`
 - Supported Python versions in CI: 3.10, 3.11, 3.12, and 3.13
 - Security automation: CodeQL, repository policy checks, and dependency audit
@@ -72,6 +77,43 @@ caused an initial `CERTIFICATE_VERIFY_FAILED`; setting `SSL_CERT_FILE` to
 `certifi`'s bundle resolved it. Anyone hitting the same error locally is
 looking at a Python install issue, not a PhishGuard bug.)
 
+## False-Positive Rearchitecture Evidence
+
+A 2026-08-24 audit found that every prior false-positive claim in this
+project's evidence — including the table above — was measured against bare
+root URLs (`https://{domain}/`), the easiest possible case. A new tool,
+`tools/evaluate_fp_stress_test.py`, tests 10 realistic security-relevant
+URL shapes (login, signin, password-reset-with-token, identity
+verification, branded subdomains) against real domains instead, and found
+a severe gap: on 3,000 real Tranco top-3,000 domains, **40.0% overall false
+positives, 27.4% strict PHISHING**, with token-bearing links at 70-100%
+regardless of which real, popular domain they were attached to.
+
+This was root-caused (an uncapped, whole-URL `url_length` weight structurally
+unable to distinguish a legitimate reset token from obfuscation) and fixed
+across four PRs (#99–#101, #103), each independently reviewable, each
+validated against the full test suite, both regression fixtures, and real
+recall on a fresh feed before merging — not merged blind:
+
+| Metric | Before | After |
+| --- | --- | --- |
+| Overall false-positive rate | 40.0% | **21.4%** offline, **15.7%** with opt-in domain-age |
+| Strict PHISHING false-positive rate | 27.4% | **10.3%** offline, **6.1%** with opt-in domain-age |
+| `password_reset_link` strict (worst offender) | 100% | **0.3%** |
+| Real recall (fresh feed, independent sample) | — | held steady, not below baseline |
+
+Two false-positive shapes remain open on purpose, named rather than hidden:
+branded subdomains and a keyword-dense path with no query string, both
+needing a domain-reputation signal beyond what was fixed here (see
+[DETECTION_MODEL.md](DETECTION_MODEL.md)'s Known Limitations). The regression
+tests for both are in the suite now — one passing after the fix, one tracked
+as an explicit `expectedFailure` so the gap can't silently regress or
+silently get hidden.
+
+Full methodology, per-template tables, and rerun commands:
+[BENCHMARK.md](BENCHMARK.md)'s "False-Positive Stress Test", "Query-String
+Scoping Fix", and "Domain-Age False-Positive Suppression" sections.
+
 ## Product Readiness Evidence
 
 Recent reviewer-facing improvements:
@@ -79,7 +121,8 @@ Recent reviewer-facing improvements:
 | Area | Evidence |
 | --- | --- |
 | Benchmark transparency | [BENCHMARK.md](BENCHMARK.md) records the public-safe baseline, recall improvement, and limits. |
-| Detection model | [DETECTION_MODEL.md](DETECTION_MODEL.md)'s "Domain Age (RDAP)" section documents the opt-in `--check-domain-age` feature, its weights, and its explicit blind spots. |
+| Realistic false-positive testing | `tools/evaluate_fp_stress_test.py` tests real domains against realistic security-URL shapes, not just bare roots — the gap that let earlier false-positive claims look cleaner than reality; see the False-Positive Rearchitecture Evidence above. |
+| Detection model | [DETECTION_MODEL.md](DETECTION_MODEL.md)'s "Domain Age (RDAP)", "Query-string scoping", and "Domain-age false-positive suppression" sections document every opt-in and default-path weight, with rationale and explicit blind spots. |
 | Python embedding | [PYTHON_API.md](PYTHON_API.md) documents direct `score_url` and `score_email` usage without shelling out. |
 | CI and code scanning | [GITHUB_CODE_SCANNING.md](GITHUB_CODE_SCANNING.md) provides SARIF generation and upload guidance. |
 | Browser use | [BROWSER_EXTENSION.md](BROWSER_EXTENSION.md) documents the unpacked Chrome/Edge extension for current-tab and pasted-URL checks. |

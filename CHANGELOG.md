@@ -6,6 +6,87 @@ All notable changes to PhishGuard AI are documented here.
 
 ### Added
 
+- **`domain_older_than_2y` feature** (`domain_age.py`, opt-in via
+  `--check-domain-age`) — a domain registered 730+ days ago now lowers
+  risk (weight `-0.60`), the mirror image of the existing
+  `domain_newer_than_30d`/`90d` features that raise it. Added to partially
+  mitigate two false-positive shapes the query-string scoping fix below
+  doesn't touch (branded subdomains like `accounts.{domain}`, and a
+  keyword-dense path with no query string): real long-established domains
+  like `accounts.google.com/signin` and `secure.github.com/login` flip from
+  `SUSPICIOUS` to `SAFE` with this enabled. The weight was kept
+  deliberately conservative rather than maximal — old domains are also
+  exactly the category `docs/BENCHMARK.md`'s "Domain-Age Validation"
+  already names as a real, unaddressed phishing vector (compromised or
+  abused-as-a-service infrastructure), so a strong negative weight here
+  would work directly against that. **Opt-in only — the default offline
+  path is unaffected**, and one of the two false-positive shapes
+  (keyword-dense path) still isn't fully fixed even with this enabled. See
+  `docs/DETECTION_MODEL.md`'s "Domain-age false-positive suppression" and
+  `docs/BENCHMARK.md`'s "Domain-Age False-Positive Suppression" for full
+  methodology and the real-recall check this was validated against.
+
+### Fixed
+
+- **`url_length`, `special_char_count`, and `digit_ratio` now score
+  `scheme://host/path` only, excluding the query string** (`url_length`
+  additionally capped at 80 characters). Previously scored against the
+  whole URL, which made a realistic token-bearing security link (a
+  password-reset or verification link) structurally indistinguishable from
+  obfuscation — found by the 2026-08-24 false-positive stress test. Two new
+  features, `query_length` and `query_param_count`, restore a small,
+  deliberately weak amount of query-string signal back — validating this
+  fix caught a real regression (a licensed phishing sample whose only
+  suspicious structure was five chained tracking parameters, which the
+  first version of this fix would have missed; `query_param_count` fixes
+  it). Measured on the 3,000-domain × 10-template stress test: overall
+  false-positive rate 40.0%→**21.4%**, strict PHISHING 27.4%→**10.3%**,
+  `password_reset_link` (previously 100%/100%) down to 4.3%/0.3%. Real
+  recall re-validated on a fresh feed: unchanged within normal sample
+  variance, both regression fixtures stayed at precision/recall 1.000. Two
+  false-positive shapes are **not** fixed by this change and remain a
+  named, tracked gap — see `docs/DETECTION_MODEL.md`'s Known Limitations.
+  See `docs/DETECTION_MODEL.md`'s "Query-string scoping" and
+  `docs/BENCHMARK.md`'s "Query-String Scoping Fix" for full methodology.
+- **Typosquat weight lowered from `0.85` to `0.65`** (`typosquatting_score`
+  in `model.py`'s `URL_WEIGHTS`). A lone edit-distance-1 collision against
+  the 47-entry brand reference list (e.g. `hicloud.com` vs. `icloud.com` —
+  a real, coincidental collision, not a constructed example) now lands in
+  `SUSPICIOUS` rather than `PHISHING` when nothing else about the URL is
+  suspicious. Does not fully solve the collision (softened, not
+  eliminated); a genuine typosquat (`paypa1.com/login`) is unaffected,
+  still `SUSPICIOUS` at this weight as it was before.
+
+### Added
+
+- **`data/branded_path_benchmark_urls.jsonl` + `RealisticSecurityUrlFalsePositiveTests`**
+  — a permanent regression guard for the false-positive gap found by
+  `tools/evaluate_fp_stress_test.py`: 8 `.example`-suffixed synthetic cases
+  covering the exact realistic login/verify/reset/subdomain URL shapes that
+  stress test found false-positiving at scale on real domains, plus a
+  `tests/test_model.py` test asserting they don't classify as PHISHING.
+  Added deliberately failing (3/8 currently fail) per this project's
+  test-before-fix convention — a following PR fixes the underlying scoring
+  to turn them green. No scoring behavior changed in this commit.
+- **`tools/evaluate_fp_stress_test.py`** — every existing false-positive
+  number in this project's evidence docs is measured against bare root URLs
+  (`https://{domain}/`), which is the easiest possible case. This tool
+  generates ten realistic security-relevant URL shapes per real domain
+  (login, signin, account/verify with a token, password-reset with a token
+  and redirect, branded subdomains, a nested identity-verification path)
+  against an externally-supplied domain ranking (nothing bundled, same
+  no-committed-third-party-data design as `evaluate_live_traffic_benchmark.py`)
+  and reports the false-positive rate per template. Found a severe gap:
+  3,000 real Tranco top-3,000 domains × 10 templates (30,000 URLs), offline
+  scoring only — 40.0% overall false-positive rate, 27.4% strict PHISHING,
+  with three templates (`verify_token_link`, `password_reset_link`,
+  `support_verify_identity`) at 70-100% false positives regardless of which
+  real domain they're attached to. Root and simple-login shapes stay near
+  zero, which is exactly why this was invisible until now. See
+  `docs/BENCHMARK.md`'s new "False-Positive Stress Test" section for the
+  full table and `docs/DETECTION_MODEL.md`'s Known Limitations for the root
+  cause. This is instrumentation only — no scoring behavior changed; fixes
+  are tracked as a phased rearchitecture.
 - **`--check-domain-age` / `domain_age.py`** — an opt-in RDAP lookup that
   weights recently-registered domains as more suspicious
   (`domain_newer_than_30d` weight `0.65`, `domain_newer_than_90d` weight
