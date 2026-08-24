@@ -10,8 +10,9 @@ that evidence, and what would strengthen future adoption.
 | --- | --- | --- |
 | GitHub Marketplace Action | https://github.com/marketplace/actions/phishguard-ai-phishing-detector | Reusable action for CI-based URL and email scanning. |
 | Latest release | https://github.com/omobolajiadeyan/phishguard-ai/releases/tag/v0.5.1 | Published release with installable package artifacts. |
-| Project benchmark | [BENCHMARK.md](BENCHMARK.md) | Regression fixture metrics, live-traffic recall validation, and a realistic false-positive stress test that found and fixed a severe gap (see below). |
+| Project benchmark | [BENCHMARK.md](BENCHMARK.md) | Regression fixture metrics, live-traffic recall validation, and a realistic false-positive stress test that found and fixed a severe gap (see below) — reconfirmed on an independent fresh data pull hours later, not measured once and assumed stable. |
 | Detection model | [DETECTION_MODEL.md](DETECTION_MODEL.md) | Feature semantics, limitations, scoring-change requirements, the opt-in RDAP domain-age lookup, and the query-string scoping fix. |
+| Browser demo | [omobolajiadeyan.github.io/phishguard-ai](https://omobolajiadeyan.github.io/phishguard-ai/) | Redesigned 2026-08-24 with a distinct visual identity; verified live and rendering correctly (Playwright, dark/light, both tabs, zero console errors). |
 | Code scanning workflow | [GITHUB_CODE_SCANNING.md](GITHUB_CODE_SCANNING.md) | SARIF integration path for GitHub Code Scanning. |
 | Adoption guide | [ADOPTION.md](ADOPTION.md) | Safe path for third-party workflow examples and showcase reports. |
 | First contribution guide | [FIRST_CONTRIBUTION.md](FIRST_CONTRIBUTION.md) | Scoped path for new contributors. |
@@ -38,9 +39,13 @@ login/reset/verification URL shapes a real security workflow actually
 produces. A new stress test against realistic shapes on 3,000 real domains
 found 40.0% overall false positives, with password-reset links at 100%
 regardless of which real domain they were attached to. This was fixed
-(overall down to 21.4% offline, 15.7% with domain-age enabled; the worst
-shape down from 100% to 0.3%) across four reviewable PRs, each validated
-against real recall before merging. Two narrower false-positive shapes
+(overall down to 21.4% offline, 15.7-16.9% with domain-age enabled across
+two independent reruns; the worst shape down from 100% to 0.0-0.3%) across
+four reviewable PRs, each validated against real recall before merging.
+Reconfirmed hours later on a second, completely independent data pull
+(different domains, different phishing feed) after an unrelated UI change
+— the offline number matched to the decimal, the domain-age numbers moved
+only within normal sampling noise. Two narrower false-positive shapes
 remain open on purpose, named rather than hidden — see
 [DETECTION_MODEL.md](DETECTION_MODEL.md)'s Known Limitations. Full tables:
 [BENCHMARK.md](BENCHMARK.md)'s "False-Positive Stress Test" section
