@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import ipaddress
 import json
+import re
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
@@ -54,6 +55,9 @@ _RECENT_DOMAIN_DAYS = 90
 # run never looks the same domain up twice -- both to spare the shared
 # rdap.org service and because repeated lookups add nothing.
 _cache: dict[str, int | None] = {}
+_DOMAIN_RE = re.compile(
+    r"^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$"
+)
 
 
 def _is_ip_literal(hostname: str) -> bool:
@@ -62,6 +66,10 @@ def _is_ip_literal(hostname: str) -> bool:
         return True
     except ValueError:
         return False
+
+
+def _is_valid_registrable_domain(domain: str) -> bool:
+    return bool(_DOMAIN_RE.fullmatch(domain))
 
 
 def _parse_registration_date(payload: dict) -> datetime | None:
@@ -108,6 +116,8 @@ def lookup_domain_age_days(url: str, timeout: float = 5.0) -> int | None:
         return None
 
     domain = registrable_domain(hostname)
+    if not _is_valid_registrable_domain(domain):
+        return None
     if domain in _cache:
         return _cache[domain]
 
