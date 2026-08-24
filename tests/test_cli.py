@@ -214,6 +214,37 @@ class CliTests(unittest.TestCase):
         self.assertIn("Feature breakdown:", result.stdout)
         self.assertIn("#", result.stdout)
 
+    def test_verbose_marker_reflects_weight_sign_not_just_value(self):
+        # domain_length has a negative weight (a longer domain is
+        # slightly *safer*), so it must never get the risk marker even
+        # though its value is > 0 for any real hostname -- previously
+        # marked via `value > 0`, which mismarked it. has_ip_address has
+        # a strong positive weight and should still be marked.
+        result = subprocess.run(
+            [
+                sys.executable,
+                "phishguard.py",
+                "url",
+                "http://192.0.2.10/secure-login/verify",
+                "--verbose",
+                "--plain",
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        lines = {
+            line.split(":", 1)[0].strip(): line
+            for line in result.stdout.splitlines()
+            if ":" in line
+        }
+        self.assertIn("domain_length", lines["domain_length"])
+        self.assertNotIn("*", lines["domain_length"])
+        self.assertIn("*", lines["has_ip_address"])
+
     def test_plain_email_command_uses_ascii_output(self):
         result = subprocess.run(
             [

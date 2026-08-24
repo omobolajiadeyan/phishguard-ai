@@ -15,7 +15,7 @@ from email_auth import (
     validate_authserv_id,
 )
 from domain_age import domain_age_features
-from model import score_url, score_email, classify, THRESHOLD
+from model import score_url, score_email, classify, THRESHOLD, URL_WEIGHTS
 from redirect import follow_redirects
 from reporting import write_report
 from server import run_server
@@ -143,7 +143,18 @@ def analyze_url(
     if verbose:
         print(f"\n  {style('Feature breakdown:', GRAY, plain=plain)}")
         for feat, val in features.items():
-            flag = style("*", RED, plain=plain) if val > 0 and feat != "has_https" else ""
+            # A feature "triggered" the score only if it's actually
+            # pushing toward PHISHING -- checking the real weight sign
+            # (not just "value > 0", which mismarks domain_length: it
+            # carries a negative weight, so a longer domain is slightly
+            # *safer*, not a risk contributor). Previously hardcoded
+            # has_https as the one exception; checking the sign directly
+            # is correct for every feature, no special-casing needed --
+            # matches the same fix already applied to the web demo's
+            # app.js (isTriggered()).
+            weight = URL_WEIGHTS.get(feat)
+            triggered = isinstance(weight, (int, float)) and weight * val > 0
+            flag = style("*", RED, plain=plain) if triggered else ""
             print(f"    {feat:<26}: {val}  {flag}")
 
     return {"url": url, "final_url": final_url, "verdict": verdict, "probability": prob, "features": features}
