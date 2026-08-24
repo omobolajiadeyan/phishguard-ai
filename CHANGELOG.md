@@ -6,6 +6,21 @@ All notable changes to PhishGuard AI are documented here.
 
 ### Added
 
+- **Redesigned browser demo UI** (`web/index.html`, `web/style.css`,
+  `web/app.js`) — a distinct visual identity (brand mark, refined dark/light
+  color system, monospace technical fields) replacing the generic form
+  layout. The risk meter now shows the actual `SAFE`/`SUSPICIOUS`/`PHISHING`
+  threshold positions (55%/75%) instead of a plain bar. The feature
+  breakdown now marks which features actually contributed to the verdict —
+  previously only the CLI did this (`phishguard.py`'s `*` marker), and even
+  that marker mismarks `domain_length` (a negative-weight, risk-*reducing*
+  feature) as triggered whenever its value is positive. The web version is
+  more correct than the CLI it mirrors: `scoring.js` now exports
+  `URL_WEIGHTS`/`EMAIL_WEIGHTS` (purely additive, no scoring behavior
+  changed — mirrors `model.py`, which already exposes these as importable
+  constants) so `app.js` can check the actual weight sign instead of
+  guessing from the value alone. No changes to `scoring.js`'s scoring
+  logic; `tests/test_js_parity.py` still passes unchanged.
 - **`domain_older_than_2y` feature** (`domain_age.py`, opt-in via
   `--check-domain-age`) — a domain registered 730+ days ago now lowers
   risk (weight `-0.60`), the mirror image of the existing

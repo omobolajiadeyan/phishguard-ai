@@ -541,7 +541,15 @@ const PhishGuardScoring = (() => {
     return "SAFE";
   }
 
-  return { scoreUrl, scoreEmail, classify };
+  // URL_WEIGHTS/EMAIL_WEIGHTS are exposed read-only so callers (the web
+  // demo's app.js) can tell whether a feature's current value is actually
+  // pushing the score toward PHISHING or away from it, rather than
+  // guessing from the value alone -- domain_length and has_https both
+  // have negative weights, so a truthy/positive value there *lowers*
+  // risk. This is purely additive (no scoring behavior changes) and
+  // mirrors model.py, which already exposes these as importable
+  // module-level constants in Python.
+  return { scoreUrl, scoreEmail, classify, URL_WEIGHTS, EMAIL_WEIGHTS };
 })();
 
 if (typeof module !== "undefined" && module.exports) {
