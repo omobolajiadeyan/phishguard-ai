@@ -71,10 +71,22 @@ const PhishGuardScoring = (() => {
   // that would make this port disagree with the Python original on
   // malformed input -- so this mirrors urlparse's algorithm directly
   // instead of delegating to URL(). See tests/test_js_parity.py.
+  // Query string after a "?" up to the next "#" (fragment), matching
+  // urlparse's split -- factored out since both the netloc and no-netloc
+  // branches below need it.
+  function extractQueryFromSegment(segment) {
+    const qIdx = segment.indexOf("?");
+    if (qIdx === -1) return "";
+    const afterQ = segment.slice(qIdx + 1);
+    const hIdx = afterQ.indexOf("#");
+    return hIdx === -1 ? afterQ : afterQ.slice(0, hIdx);
+  }
+
   function pythonLikeUrlParse(rawUrl) {
     const url = String(rawUrl).replace(/^[ \t\r\n\f\v]+/, "");
 
     const schemeMatch = url.match(/^([a-zA-Z][a-zA-Z0-9+.-]*):/);
+    const scheme = schemeMatch ? schemeMatch[1].toLowerCase() : "";
     let rest = url;
     if (schemeMatch) {
       rest = url.slice(schemeMatch[0].length);
@@ -82,13 +94,18 @@ const PhishGuardScoring = (() => {
 
     let netloc = "";
     let path;
-    if (rest.startsWith("//")) {
+    let query;
+    const hasNetloc = rest.startsWith("//");
+    if (hasNetloc) {
       const afterSlashes = rest.slice(2);
       const end = afterSlashes.search(/[/?#]/);
       netloc = end === -1 ? afterSlashes : afterSlashes.slice(0, end);
-      path = end === -1 ? "" : afterSlashes.slice(end).split(/[?#]/)[0];
+      const remainder = end === -1 ? "" : afterSlashes.slice(end);
+      path = remainder.split(/[?#]/)[0];
+      query = extractQueryFromSegment(remainder);
     } else {
       path = rest.split(/[?#]/)[0];
+      query = extractQueryFromSegment(rest);
     }
 
     let hostPart = netloc;
@@ -116,7 +133,27 @@ const PhishGuardScoring = (() => {
       }
     }
 
-    return { hostname, port, path };
+    return { hostname, port, path, scheme, netloc, hasNetloc, query };
+  }
+
+  // scheme://host/path only -- drops the query string and fragment, the
+  // same substring features.py's _url_without_query() scores url_length,
+  // special_char_count, and digit_ratio against. Query-string tokens
+  // (password-reset/verification links, session IDs, tracking params) are
+  // near-universal on real sites and carry almost no domain-identity
+  // signal. Mirrors Python's urlparse(url)._replace(query="",
+  // fragment="").geturl() reconstruction rule exactly (verified against
+  // every case in tests/test_js_parity.py's URL_CASES, including
+  // no-scheme, no-netloc, and malformed input).
+  function urlWithoutQuery(rawUrl) {
+    const parsed = pythonLikeUrlParse(rawUrl);
+    if (parsed.scheme && parsed.hasNetloc) {
+      return parsed.scheme + "://" + parsed.netloc + parsed.path;
+    }
+    if (parsed.scheme) {
+      return parsed.scheme + ":" + parsed.path;
+    }
+    return parsed.path;
   }
 
   function safeHostname(url) {
@@ -131,8 +168,24 @@ const PhishGuardScoring = (() => {
     return pythonLikeUrlParse(url).port;
   }
 
+  // Hard cap on the raw character count before the weight is applied.
+  // Excluding the query string (via urlWithoutQuery) already handles most
+  // realistic long-URL cases; this is a secondary safety net so a
+  // pathologically deep path still can't scale the contribution without
+  // bound. Must match features.py's _URL_LENGTH_CAP exactly.
+  const URL_LENGTH_CAP = 80;
+
   function urlLength(url) {
-    return pythonLength(url);
+    return Math.min(pythonLength(urlWithoutQuery(url)), URL_LENGTH_CAP);
+  }
+
+  function queryLength(url) {
+    return pythonLength(pythonLikeUrlParse(url).query);
+  }
+
+  function queryParamCount(url) {
+    const query = pythonLikeUrlParse(url).query;
+    return query.split("=").length - 1;
   }
 
   function subdomainCount(url) {
@@ -160,10 +213,14 @@ const PhishGuardScoring = (() => {
   }
 
   function specialCharCount(url) {
+    // Scored on the same non-query substring as urlLength: "? & = #" are
+    // structural query-string syntax, not obfuscation, when a query
+    // string is doing what query strings are for.
+    const scored = urlWithoutQuery(url);
     const chars = ["@", "-", "_", "~", "%", "=", "?", "&", "#"];
     let count = 0;
     for (const c of chars) {
-      count += url.split(c).length - 1;
+      count += scored.split(c).length - 1;
     }
     return count;
   }
@@ -173,12 +230,16 @@ const PhishGuardScoring = (() => {
   }
 
   function digitRatio(url) {
-    if (!url) return 0.0;
+    // Scored on the same non-query substring as urlLength: a hex/base64
+    // reset token in the query string is digit-heavy on essentially every
+    // real site with an account flow, not a domain-level suspicion signal.
+    const scored = urlWithoutQuery(url);
+    if (!scored) return 0.0;
     let digits = 0;
-    for (const ch of url) {
+    for (const ch of scored) {
       if (ch >= "0" && ch <= "9") digits += 1;
     }
-    return digits / pythonLength(url);
+    return digits / pythonLength(scored);
   }
 
   function phishingKeywordCount(url) {
@@ -304,6 +365,8 @@ const PhishGuardScoring = (() => {
   function extractUrlFeatures(url) {
     return {
       url_length: urlLength(url),
+      query_length: queryLength(url),
+      query_param_count: queryParamCount(url),
       subdomain_count: subdomainCount(url),
       has_ip_address: hasIpAddress(url),
       special_char_count: specialCharCount(url),
@@ -405,6 +468,8 @@ const PhishGuardScoring = (() => {
 
   const URL_WEIGHTS = {
     url_length: 0.015,
+    query_length: 0.002,
+    query_param_count: 0.02,
     subdomain_count: 0.18,
     has_ip_address: 0.90,
     special_char_count: 0.06,
@@ -419,7 +484,7 @@ const PhishGuardScoring = (() => {
     has_punycode: 0.10,
     has_unicode_hostname: 0.08,
     has_opaque_hostname_label: 0.90,
-    typosquatting_score: 0.85,
+    typosquatting_score: 0.65, // was 0.85; lowered so a lone typosquat hit lands in SUSPICIOUS, not PHISHING -- see model.py
     on_free_hosting_platform: 0.70,
     redirect_crossed_domain: 0.65,
     redirect_hops: 0.05,
@@ -476,7 +541,15 @@ const PhishGuardScoring = (() => {
     return "SAFE";
   }
 
-  return { scoreUrl, scoreEmail, classify };
+  // URL_WEIGHTS/EMAIL_WEIGHTS are exposed read-only so callers (the web
+  // demo's app.js) can tell whether a feature's current value is actually
+  // pushing the score toward PHISHING or away from it, rather than
+  // guessing from the value alone -- domain_length and has_https both
+  // have negative weights, so a truthy/positive value there *lowers*
+  // risk. This is purely additive (no scoring behavior changes) and
+  // mirrors model.py, which already exposes these as importable
+  // module-level constants in Python.
+  return { scoreUrl, scoreEmail, classify, URL_WEIGHTS, EMAIL_WEIGHTS };
 })();
 
 if (typeof module !== "undefined" && module.exports) {

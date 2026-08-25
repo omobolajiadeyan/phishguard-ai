@@ -103,6 +103,34 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(body["final_url"], "https://example.com/landing")
         self.assertEqual(body["redirect_chain"], {"hops": 2, "crossed_domain": True})
 
+    def test_url_invalid_check_domain_age_is_400(self):
+        status, body = self._post(
+            "/v1/url",
+            {"url": "https://example.com", "check_domain_age": "yes"},
+            expect_status=400,
+        )
+        self.assertEqual(status, 400)
+
+    def test_url_check_domain_age_feeds_the_model(self):
+        with patch(
+            "server.domain_age_features",
+            return_value={"domain_newer_than_30d": 1, "domain_newer_than_90d": 1},
+        ) as mocked:
+            status, body = self._post(
+                "/v1/url",
+                {"url": "https://freshly-registered.example", "check_domain_age": True},
+            )
+        self.assertEqual(status, 200)
+        mocked.assert_called_once()
+        self.assertEqual(body["features"]["domain_newer_than_30d"], 1)
+
+    def test_url_check_domain_age_defaults_off(self):
+        with patch("server.domain_age_features") as mocked:
+            status, body = self._post("/v1/url", {"url": "https://example.com"})
+        self.assertEqual(status, 200)
+        mocked.assert_not_called()
+        self.assertNotIn("domain_newer_than_30d", body["features"])
+
     def test_email_scoring(self):
         status, body = self._post(
             "/v1/email",

@@ -49,6 +49,44 @@ class CliTests(unittest.TestCase):
             output.getvalue(),
         )
 
+    def test_check_domain_age_prints_unknown_when_lookup_fails(self):
+        output = StringIO()
+
+        with patch("phishguard.domain_age_features", return_value={}):
+            with redirect_stdout(output):
+                phishguard.analyze_url(
+                    "https://example.com",
+                    plain=True,
+                    check_domain_age=True,
+                )
+
+        self.assertIn("registration age unknown", output.getvalue())
+
+    def test_check_domain_age_prints_recency_when_known(self):
+        output = StringIO()
+
+        with patch(
+            "phishguard.domain_age_features",
+            return_value={"domain_newer_than_30d": 1, "domain_newer_than_90d": 1},
+        ):
+            with redirect_stdout(output):
+                result = phishguard.analyze_url(
+                    "https://example.com",
+                    plain=True,
+                    check_domain_age=True,
+                )
+
+        self.assertIn("registered under 30 days ago", output.getvalue())
+        self.assertEqual(result["features"]["domain_newer_than_30d"], 1)
+
+    def test_check_domain_age_is_off_by_default(self):
+        with patch("phishguard.domain_age_features") as mocked:
+            with redirect_stdout(StringIO()):
+                result = phishguard.analyze_url("https://example.com", plain=True)
+
+        mocked.assert_not_called()
+        self.assertNotIn("domain_newer_than_30d", result["features"])
+
     def assert_plain_output(self, output):
         self.assertTrue(output.isascii(), output)
         self.assertNotIn("\033[", output)
@@ -175,6 +213,37 @@ class CliTests(unittest.TestCase):
         self.assert_plain_output(result.stdout)
         self.assertIn("Feature breakdown:", result.stdout)
         self.assertIn("#", result.stdout)
+
+    def test_verbose_marker_reflects_weight_sign_not_just_value(self):
+        # domain_length has a negative weight (a longer domain is
+        # slightly *safer*), so it must never get the risk marker even
+        # though its value is > 0 for any real hostname -- previously
+        # marked via `value > 0`, which mismarked it. has_ip_address has
+        # a strong positive weight and should still be marked.
+        result = subprocess.run(
+            [
+                sys.executable,
+                "phishguard.py",
+                "url",
+                "http://192.0.2.10/secure-login/verify",
+                "--verbose",
+                "--plain",
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        lines = {
+            line.split(":", 1)[0].strip(): line
+            for line in result.stdout.splitlines()
+            if ":" in line
+        }
+        self.assertIn("domain_length", lines["domain_length"])
+        self.assertNotIn("*", lines["domain_length"])
+        self.assertIn("*", lines["has_ip_address"])
 
     def test_plain_email_command_uses_ascii_output(self):
         result = subprocess.run(

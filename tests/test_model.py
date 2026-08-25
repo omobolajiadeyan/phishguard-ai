@@ -67,6 +67,64 @@ class UrlScoringTests(unittest.TestCase):
         self.assertEqual(features["phishing_keywords"], 2)
 
 
+class RealisticSecurityUrlFalsePositiveTests(unittest.TestCase):
+    """Regression guard for the false-positive gap found by the 2026-08-24
+    stress test (docs/BENCHMARK.md's "False-Positive Stress Test",
+    tools/evaluate_fp_stress_test.py): every prior "known legitimate" test
+    case above is a bare root domain or a trivial path, so none of them
+    exercised the URL shapes a real login, verification, or password-reset
+    flow actually produces -- which is also exactly the shape a phishing
+    page is built to imitate. These cases are drawn directly from
+    data/branded_path_benchmark_urls.jsonl.
+
+    Fixed by the query-string scoping change (docs/DETECTION_MODEL.md's
+    "Query-string scoping"): url_length, special_char_count, and
+    digit_ratio are now scored on scheme://host/path only, so a realistic
+    token-bearing security link isn't penalized for doing what a query
+    string is for.
+    """
+
+    def test_realistic_security_urls_on_real_domains_are_not_phishing(self):
+        urls = (
+            "https://contoso.example/login",
+            "https://www.fabrikam.example/signin",
+            "https://northwind.example/account/login",
+            "https://contoso.example/account/verify?token=a1b2c3d4e5f67890",
+            "https://fabrikam.example/password/reset?token=b6c7d8e9f0a1b2c3&redirect=https://fabrikam.example/dashboard",
+            "https://accounts.northwind.example/signin",
+            "https://secure.contoso.example/login",
+        )
+
+        for url in urls:
+            with self.subTest(url=url):
+                probability, _ = score_url(url)
+                self.assertNotEqual(
+                    classify(probability),
+                    "PHISHING",
+                    f"{url} scored {probability} -- an ordinary security-relevant "
+                    "path should not alone be enough to reach the highest verdict",
+                )
+
+    @unittest.expectedFailure
+    def test_keyword_dense_path_without_query_string_is_a_known_gap(self):
+        """NOT fixed by the query-string scoping change, and deliberately
+        not chased with a weight tweak: this path has no query string at
+        all, so the fix above doesn't touch it. The score is driven by
+        phishing_keywords density (4 matches: support/account/security/
+        verify) plus base path length -- tuning either down to pass this
+        one case risked weakening real phishing detection without a
+        domain-reputation signal to tell a real branded path from an
+        imitation of one (see docs/DETECTION_MODEL.md's Known
+        Limitations). Tracked here with @expectedFailure rather than
+        deleted, so it stays visible in the suite and this decorator must
+        be removed -- not silently left stale -- once a fix lands.
+        """
+        probability, _ = score_url(
+            "https://fabrikam.example/support/account/security/verify-identity"
+        )
+        self.assertNotEqual(classify(probability), "PHISHING")
+
+
 class EmailScoringTests(unittest.TestCase):
     def test_normal_email_is_safe(self):
         probability, _ = score_email(

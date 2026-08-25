@@ -1,7 +1,8 @@
 # One-Minute PhishGuard Demo
 
-This demo uses only synthetic or reserved-domain input. PhishGuard runs
-offline and does not send the input to a remote service.
+This demo uses only synthetic or reserved-domain input. These commands run
+offline and do not send the input to a remote service. The optional
+`--check-domain-age` flag is not used here; enabling it performs an RDAP lookup.
 
 ## 1. Install
 

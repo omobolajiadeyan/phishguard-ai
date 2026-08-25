@@ -14,7 +14,8 @@ from email_auth import (
     select_trusted_authentication_results,
     validate_authserv_id,
 )
-from model import score_url, score_email, classify, THRESHOLD
+from domain_age import domain_age_features
+from model import score_url, score_email, classify, THRESHOLD, URL_WEIGHTS
 from redirect import follow_redirects
 from reporting import write_report
 from server import run_server
@@ -94,20 +95,23 @@ def analyze_url(
     verbose: bool = False,
     plain: bool = False,
     follow_redirects_hops: int = 0,
+    check_domain_age: bool = False,
 ) -> dict:
     chain_info: dict = {}
+    extra: dict = {}
 
     if follow_redirects_hops > 0:
         chain_info = follow_redirects(url, max_hops=follow_redirects_hops)
         final_url = chain_info["final_url"]
-        extra = {
-            "redirect_hops":           chain_info["hops"],
-            "redirect_crossed_domain": int(chain_info["crossed_domain"]),
-        }
-        prob, features = score_url(final_url, extra_features=extra)
+        extra["redirect_hops"] = chain_info["hops"]
+        extra["redirect_crossed_domain"] = int(chain_info["crossed_domain"])
     else:
         final_url = url
-        prob, features = score_url(url)
+
+    if check_domain_age:
+        extra.update(domain_age_features(final_url))
+
+    prob, features = score_url(final_url, extra_features=extra or None)
 
     verdict = classify(prob)
 
@@ -128,13 +132,29 @@ def analyze_url(
                 plain=plain,
             )
         )
+    if check_domain_age:
+        if "domain_newer_than_30d" in features:
+            print(f"  Domain  : registered {'under 30 days ago' if features['domain_newer_than_30d'] else ('under 90 days ago' if features['domain_newer_than_90d'] else '90+ days ago')}")
+        else:
+            print(style("  Domain  : registration age unknown (no RDAP record or lookup failed)", GRAY, plain=plain))
     print(f"  Verdict : {style(verdict, VERDICT_COLOR[verdict], BOLD, plain=plain)}")
     print(f"  Risk    : {probability_bar(prob, plain=plain)}")
 
     if verbose:
         print(f"\n  {style('Feature breakdown:', GRAY, plain=plain)}")
         for feat, val in features.items():
-            flag = style("*", RED, plain=plain) if val > 0 and feat != "has_https" else ""
+            # A feature "triggered" the score only if it's actually
+            # pushing toward PHISHING -- checking the real weight sign
+            # (not just "value > 0", which mismarks domain_length: it
+            # carries a negative weight, so a longer domain is slightly
+            # *safer*, not a risk contributor). Previously hardcoded
+            # has_https as the one exception; checking the sign directly
+            # is correct for every feature, no special-casing needed --
+            # matches the same fix already applied to the web demo's
+            # app.js (isTriggered()).
+            weight = URL_WEIGHTS.get(feat)
+            triggered = isinstance(weight, (int, float)) and weight * val > 0
+            flag = style("*", RED, plain=plain) if triggered else ""
             print(f"    {feat:<26}: {val}  {flag}")
 
     return {"url": url, "final_url": final_url, "verdict": verdict, "probability": prob, "features": features}
@@ -145,6 +165,7 @@ def analyze_eml(
     verbose: bool = False,
     plain: bool = False,
     follow_redirects_hops: int = 0,
+    check_domain_age: bool = False,
     trusted_authserv_id: str | None = None,
 ) -> dict:
     """Parse a .eml file and run email + embedded-URL analysis."""
@@ -255,6 +276,7 @@ def analyze_eml(
                 verbose=verbose,
                 plain=plain,
                 follow_redirects_hops=follow_redirects_hops,
+                check_domain_age=check_domain_age,
             )
             url_results.append(url_result)
         result["body_urls"] = url_results
@@ -352,6 +374,20 @@ def add_redirect_argument(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def add_domain_age_argument(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--check-domain-age",
+        action="store_true",
+        help=(
+            "Look up the domain's registration age via RDAP and weight newly "
+            "registered domains as more suspicious (default: off, offline). "
+            "Requires network access to the rdap.org bootstrap; not available "
+            "on 'batch' because that public service rate-limits aggressively "
+            "under repeated lookups."
+        ),
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="PhishGuard AI — Phishing detection for URLs and emails",
@@ -360,6 +396,7 @@ def main():
 Examples:
   python phishguard.py url "http://paypa1-secure-login.xyz/verify"
   python phishguard.py url "https://bit.ly/abc123" --follow-redirects 5
+  python phishguard.py url "http://freshly-registered.example" --check-domain-age
   python phishguard.py url "https://google.com" --verbose
   python phishguard.py email --subject "URGENT: Verify your account" --body "Click here immediately"
   python phishguard.py eml suspicious.eml --verbose
@@ -376,6 +413,7 @@ Examples:
     url_parser.add_argument("--verbose", "-v", action="store_true")
     add_output_arguments(url_parser)
     add_redirect_argument(url_parser)
+    add_domain_age_argument(url_parser)
 
     # Email command
     email_parser = subparsers.add_parser("email", help="Analyze an email subject and body")
@@ -401,6 +439,7 @@ Examples:
     eml_parser.add_argument("--verbose", "-v", action="store_true")
     add_output_arguments(eml_parser)
     add_redirect_argument(eml_parser)
+    add_domain_age_argument(eml_parser)
 
     # Batch command
     batch_parser = subparsers.add_parser("batch", help="Scan a list of URLs from a file")
@@ -461,6 +500,7 @@ Examples:
             verbose=args.verbose,
             plain=args.plain,
             follow_redirects_hops=args.follow_redirects,
+            check_domain_age=args.check_domain_age,
         )
         if args.output:
             write_report(result, args.output, args.format)
@@ -484,6 +524,7 @@ Examples:
             verbose=args.verbose,
             plain=args.plain,
             follow_redirects_hops=args.follow_redirects,
+            check_domain_age=args.check_domain_age,
             trusted_authserv_id=args.trusted_authserv_id,
         )
         if args.output:
