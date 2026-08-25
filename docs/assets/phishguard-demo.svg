@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1040" viewBox="0 0 1440 1040" role="img" aria-labelledby="title desc">
-  <title id="title">PhishGuard AI terminal demonstration</title>
-  <desc id="desc">A polished terminal screenshot generated from real PhishGuard AI CLI output. A reserved example.com URL scores 25.3 percent and is safe, while a TEST-NET-1 credential lure scores 98.8 percent and is phishing.</desc>
+  <title id="title">PhishGuard AI current CLI validation</title>
+  <desc id="desc">Current PhishGuard AI CLI output from public-safe inputs. A reserved example.com URL scores 25.3 percent and is safe, while a TEST-NET-1 credential lure scores 98.8 percent and is phishing. The full suite separately completed 199 tests with 2 skips and 1 expected failure.</desc>
   <defs>
     <linearGradient id="page" x1="0" x2="1" y1="0" y2="1">
       <stop offset="0" stop-color="#f8fafc"/>
@@ -16,8 +16,8 @@
   </defs>
 
   <rect width="1440" height="1040" rx="0" fill="url(#page)"/>
-  <text x="120" y="104" fill="#111827" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="44" font-weight="800">PhishGuard AI evidence run</text>
-  <text x="120" y="148" fill="#475569" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24">Real CLI output using public-safe inputs. Runs offline with no API key.</text>
+  <text x="120" y="104" fill="#111827" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="44" font-weight="800">PhishGuard AI current CLI validation</text>
+  <text x="120" y="148" fill="#475569" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24">Real output from current main using public-safe inputs; full suite separately verified.</text>
 
   <g filter="url(#shadow)">
     <rect x="120" y="190" width="1200" height="738" rx="26" fill="#080d14"/>
@@ -60,7 +60,7 @@
     <rect x="400" y="958" width="192" height="42" rx="21" fill="#dbeafe" stroke="#3b82f6"/>
     <text x="496" y="985" fill="#1d4ed8" text-anchor="middle">Runs offline</text>
     <rect x="612" y="958" width="224" height="42" rx="21" fill="#fef3c7" stroke="#f59e0b"/>
-    <text x="724" y="985" fill="#92400e" text-anchor="middle">No API key needed</text>
+    <text x="724" y="985" fill="#92400e" text-anchor="middle">199 tests completed</text>
     <rect x="856" y="958" width="306" height="42" rx="21" fill="#f1f5f9" stroke="#94a3b8"/>
     <text x="1009" y="985" fill="#334155" text-anchor="middle">Generated August 24, 2026</text>
   </g>

@@ -4,132 +4,49 @@
 [![CodeQL](https://github.com/omobolajiadeyan/phishguard-ai/actions/workflows/codeql.yml/badge.svg)](https://github.com/omobolajiadeyan/phishguard-ai/actions/workflows/codeql.yml)
 [![Release](https://img.shields.io/github/v/release/omobolajiadeyan/phishguard-ai?style=flat-square)](https://github.com/omobolajiadeyan/phishguard-ai/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
-[![Maintainer](https://img.shields.io/badge/Maintainer-Omobolaji_Adeyan-0A66C2?style=flat-square)](https://github.com/omobolajiadeyan)
+[![Marketplace](https://img.shields.io/badge/GitHub-Marketplace-2088FF?style=flat-square&logo=github)](https://github.com/marketplace/actions/phishguard-ai-phishing-detector)
 [![Contributions](https://img.shields.io/badge/Contributions-Welcome-2ea44f?style=flat-square)](CONTRIBUTING.md)
-[![GitHub forks](https://img.shields.io/github/forks/omobolajiadeyan/phishguard-ai?style=flat-square)](https://github.com/omobolajiadeyan/phishguard-ai/forks)
-[![Release downloads](https://img.shields.io/github/downloads/omobolajiadeyan/phishguard-ai/total?style=flat-square)](https://github.com/omobolajiadeyan/phishguard-ai/releases)
 
-An explainable phishing detection engine for URLs and email. PhishGuard AI
-runs offline, requires no API key, and explains which features caused a URL or
-message to be flagged.
+Explainable phishing detection for URLs and email—offline by default, with no
+API key and no runtime dependencies.
 
-Use it when you need a lightweight security check that is easy to run in a
-terminal, CI workflow, GitHub Action, or code-scanning pipeline.
+PhishGuard AI turns structural URL signals and email indicators into a
+reviewable risk score, verdict, and feature-level explanation. Run it from a
+terminal, embed it in Python, add it to GitHub Actions, export JSON or SARIF,
+or use the browser demo.
 
-Created and maintained by
-[Omobolaji Adeyan](https://github.com/omobolajiadeyan), a cybersecurity
-engineer focused on practical Python security tooling, threat detection, and
-security automation.
+[Try the live demo](https://omobolajiadeyan.github.io/phishguard-ai/) ·
+[Install v0.5.1](#quick-start) ·
+[View on Marketplace](https://github.com/marketplace/actions/phishguard-ai-phishing-detector) ·
+[Review the evidence](docs/PROJECT_EVIDENCE.md) ·
+[Read the detection model](docs/DETECTION_MODEL.md)
 
-Built because many phishing detection tools are either black-box cloud services
-or require expensive ML training pipelines. PhishGuard keeps the first version
-small, inspectable, and reproducible: standard-library Python, documented
-signals, regression tests, JSON output, and SARIF 2.1.0 for GitHub Code
-Scanning.
+![Current PhishGuard AI CLI validation using public-safe inputs](docs/assets/phishguard-demo.svg?v=20260824-3)
 
-## Current Evidence
+The image shows current CLI output from reserved, public-safe inputs. The
+latest validation completed 199 tests with 2 skips and 1 tracked expected
+failure. Reproduction commands and limitations are recorded in
+[Project Evidence](docs/PROJECT_EVIDENCE.md).
 
-Recent work shows a broader product surface than a single CLI script:
+## Why PhishGuard
 
-| Evidence Area | What Reviewers Can Inspect |
+| Capability | What it provides |
 | --- | --- |
-| Detection quality | Public-safe benchmark fixture with dated precision, recall, and false-positive results in [BENCHMARK.md](docs/BENCHMARK.md). |
-| Automation | JSON and SARIF 2.1.0 output for CI, GitHub Code Scanning, and security review workflows. |
-| Integration paths | Stable Python API guide, GitHub Marketplace Action, browser extension prototype, and `phishguard serve` REST API mode. |
-| Trust boundaries | Conservative email-authentication handling and expanded parser tests for saved-message inputs. |
-| Adoption readiness | Third-party adoption templates, first-contribution guide, release artifacts, checksums, and public demo evidence. |
+| Explainable scoring | `SAFE`, `SUSPICIOUS`, or `PHISHING` with the signals that affected the result |
+| Private by default | URL and email scoring runs locally; only opt-in RDAP domain-age checks use a third party |
+| Automation-ready | Native JSON, SARIF 2.1.0, GitHub Action, Code Scanning, and batch scanning |
+| Multiple interfaces | CLI, Python API, browser demo, Chromium extension prototype, and REST server |
+| Reviewable implementation | Standard-library Python, documented weights, regression fixtures, and cross-language parity tests |
 
-See [Project Evidence](docs/PROJECT_EVIDENCE.md) for the dated evidence record
-and exact reproduction commands.
+PhishGuard is designed as a lightweight supporting signal for security
+engineers, SOC analysts, developers, and educators. It is not a replacement
+for enterprise email security, threat-intelligence feeds, asset context, or a
+statistically trained production model.
 
-## Why People Use It
+## Quick Start
 
-- **Explainable by default:** each result includes the URL, verdict, risk score,
-  and triggered evidence.
-- **Offline and private by default:** no input is sent to an external API
-  unless you explicitly enable the RDAP-backed domain-age check.
-- **CI friendly:** JSON and SARIF output work in automation and security review.
-- **Zero runtime dependencies:** useful for restricted environments.
-- **Conservative email-auth scoring:** SPF, DKIM, and DMARC failures are
-  supporting evidence, not automatic proof of phishing.
-
-## Best Fit
-
-PhishGuard is useful for:
-
-- security engineers adding lightweight phishing checks to CI;
-- SOC analysts who want reproducible examples and feature explanations;
-- educators demonstrating phishing indicators without live malicious links;
-- developers who want to test URL and email risk signals locally.
-
-It is not a replacement for enterprise email security, threat intelligence
-feeds, or a statistically trained production model. See
-[BENCHMARK.md](docs/BENCHMARK.md) and
-[DETECTION_MODEL.md](docs/DETECTION_MODEL.md) for current evidence and limits.
-
-## How It Works
-
-Rather than relying only on blocklists, PhishGuard extracts behavioral and
-structural features from URLs and email content, then applies an explainable,
-hand-tuned heuristic model. The current weights are informed by common
-phishing indicators and protected by regression tests; they have not yet been
-validated as a statistically trained model.
-
-**URL features analyzed:**
-- Domain entropy (randomly generated domains score high)
-- IP address in URL (almost always malicious)
-- Suspicious TLDs (`.xyz`, `.tk`, `.ml`, `.ga`, `.click`)
-- Phishing keyword density (`verify`, `suspended`, `account`, `secure`, etc.)
-- Subdomain depth, path depth, digit ratio, special character density
-- Punycode and Unicode hostname indicators, weighted conservatively as context
-- Free/throwaway hosting platforms (`pages.dev`, `netlify.app`, `replit.app`, etc.)
-- Typosquatting distance against a list of commonly impersonated brands
-- Domain registration age via RDAP — **opt-in only** (`--check-domain-age`),
-  since it's the one feature that calls a third-party service instead of
-  scoring the URL string alone. See [Domain Age](#domain-age-opt-in) below.
-
-**Email features analyzed:**
-- Urgency language (`action required`, `account suspended`, `verify now`)
-- Link and URL density
-- ALL CAPS word usage
-- Attachment mentions
-- Exclamation mark frequency
-- Optional SPF, DKIM, and DMARC results from a trusted receiver
-
-## Features
-
-- Real-time URL and email analysis with an explainable heuristic risk score
-- Batch scan a list of URLs from a file
-- Explainable results - see which features triggered the alert
-- Three verdict levels: `SAFE`, `SUSPICIOUS`, `PHISHING`
-- JSON export for integration into SOC workflows
-- SARIF 2.1.0 export for GitHub Code Scanning and CI security pipelines
-- Zero dependencies - pure Python standard library
-- Offline by default - no data is sent anywhere unless you opt into domain-age
-  checks
-
-## Try It in One Minute
-
-The [one-minute demo](docs/QUICK_DEMO.md) compares legitimate and suspicious
-inputs, displays the explainable feature breakdown, and exports a finding
-without using live phishing infrastructure.
-
-External reviewers can follow the
-[five-minute evaluator guide](docs/EVALUATOR_GUIDE.md) to run safe examples,
-inspect output, and understand the trust boundaries before judging the project.
-
-![PhishGuard safe-input and phishing-input terminal comparison](docs/assets/phishguard-demo.svg)
-
-The terminal evidence above uses only public-safe inputs (`example.com` and
-the TEST-NET-1 documentation range), so reviewers can reproduce the result
-without touching live phishing infrastructure.
-See [Public Evidence and Adoption](docs/PUBLIC_EVIDENCE.md) for the current
-Marketplace, release, benchmark, and contributor evidence narrative.
-[Watch the 18-second safe demo video](https://github.com/omobolajiadeyan/phishguard-ai/releases/download/v0.4.0/phishguard-demo.mp4).
-
-## Installation
-
-Install the verified `v0.5.1` wheel directly from GitHub Releases:
+Python 3.10 or later is required. Install the verified `v0.5.1` wheel from
+GitHub Releases:
 
 ```bash
 python -m pip install \
@@ -137,33 +54,51 @@ python -m pip install \
 phishguard --help
 ```
 
-The release also includes a source archive, `SHA256SUMS`, and signed build
-provenance. See the
-[v0.5.1 release](https://github.com/omobolajiadeyan/phishguard-ai/releases/tag/v0.5.1)
-for downloads and verification details.
-Windows users can follow the copy-paste
-[Windows install verification guide](docs/WINDOWS_INSTALL.md).
-
-## Quick Scan
-
-After installation, run one safe example and one suspicious synthetic example:
+Run a safe example and a suspicious synthetic example:
 
 ```bash
 phishguard url "https://www.example.com/account" --plain
 phishguard url "http://192.0.2.10/secure-login/verify" --verbose --plain
 ```
 
-For a CI-style result:
+Both inputs are reserved for documentation and do not contact live phishing
+infrastructure. See the [one-minute demo](docs/QUICK_DEMO.md) or the
+[five-minute evaluator guide](docs/EVALUATOR_GUIDE.md) for a guided review.
+
+## Common Workflows
+
+### URLs, email, and saved messages
 
 ```bash
-phishguard url "http://192.0.2.10/secure-login/verify" \
-  --format sarif \
-  --output phishguard-results.sarif
+# URL with an explainable feature breakdown
+phishguard url "http://paypa1-secure-login.xyz/verify" --verbose
+
+# Email with authentication evidence from a trusted receiver
+phishguard email \
+  --subject "URGENT: Your account has been suspended" \
+  --body "Click here immediately to verify your account." \
+  --authentication-results "mx.example; spf=fail; dkim=fail; dmarc=fail"
+
+# Saved email; trust only the named receiver's Authentication-Results header
+phishguard eml suspicious.eml --trusted-authserv-id mx.example --verbose
 ```
 
-## GitHub Action
+SPF, DKIM, and DMARC failures are supporting evidence—not automatic proof of
+phishing. PhishGuard parses supplied results; it does not perform DNS policy
+validation or cryptographic signature verification.
 
-Use the stable Marketplace release to scan a URL in CI:
+### JSON, SARIF, and batch output
+
+```bash
+phishguard batch data/urls.txt --output results.json
+phishguard batch data/urls.txt --format sarif --output phishguard.sarif
+```
+
+See [GitHub Code Scanning](docs/GITHUB_CODE_SCANNING.md) and the
+[email output examples](docs/EMAIL_OUTPUT_EXAMPLES.md) for integration-ready
+examples.
+
+### GitHub Action
 
 ```yaml
 - name: Scan URL with PhishGuard AI
@@ -173,272 +108,116 @@ Use the stable Marketplace release to scan a URL in CI:
     sarif-output: phishguard-results.sarif
 ```
 
-See the
-[GitHub Marketplace listing](https://github.com/marketplace/actions/phishguard-ai-phishing-detector)
-for available inputs and version selection.
-Teams testing PhishGuard in their own repositories can follow the
-[adoption and showcase guide](docs/ADOPTION.md).
+The [Marketplace listing](https://github.com/marketplace/actions/phishguard-ai-phishing-detector)
+documents all inputs. Teams evaluating the action can follow the
+[adoption guide](docs/ADOPTION.md).
 
-For development, install from a clone:
+### Python API
 
-```bash
-git clone https://github.com/omobolajiadeyan/phishguard-ai.git
-cd phishguard-ai
-python --version  # Python 3.10+ required
-python -m pip install .
-python -m unittest discover -s tests -v
+```python
+from model import classify, score_url
+
+probability, features = score_url("https://www.example.com/account")
+print(classify(probability), probability, features)
 ```
 
-Installation provides a `phishguard` command. Running the source file directly
-remains supported for development.
+See the [Python API guide](docs/PYTHON_API.md) for supported URL, email, and
+extra-feature contracts.
 
-Python callers can also embed the supported API directly. See the
-[Python API guide](docs/PYTHON_API.md) for `score_url`, `score_email`, and
-`classify` examples.
+### Browser and REST API
 
-## Usage
+The [live browser demo](https://omobolajiadeyan.github.io/phishguard-ai/)
+runs the JavaScript scoring port entirely in the browser. Python/JavaScript
+parity tests guard against model drift. The
+[Chromium extension prototype](docs/BROWSER_EXTENSION.md) uses the same local
+scoring model and does not request browsing history.
 
-```bash
-# Analyze a single URL
-phishguard url "http://paypa1-secure-login.xyz/verify"
-
-# Analyze with feature breakdown
-phishguard url "https://google.com" --verbose
-
-# Weight newly-registered domains as more suspicious (opt-in, needs network access)
-phishguard url "http://freshly-registered.example" --check-domain-age --verbose
-
-# Analyze an email
-phishguard email \
-  --subject "URGENT: Your account has been suspended" \
-  --body "Click here immediately to verify your account or it will be deleted." \
-  --authentication-results "mx.example; spf=fail; dkim=fail; dmarc=fail"
-
-# Analyze a saved message using authentication evidence from one trusted receiver
-phishguard eml suspicious.eml \
-  --trusted-authserv-id mx.example \
-  --verbose
-
-# Batch scan a list of URLs
-phishguard batch data/urls.txt
-
-# Use ASCII-only output in legacy terminals or CI logs
-python phishguard.py url "https://google.com" --plain
-python phishguard.py batch data/urls.txt --no-unicode
-
-# Export results to JSON
-phishguard batch data/urls.txt --output results.json
-
-# Export actionable findings to SARIF 2.1.0
-phishguard batch data/urls.txt \
-  --format sarif \
-  --output phishguard.sarif
-```
-
-See the [GitHub Code Scanning guide](docs/GITHUB_CODE_SCANNING.md) for a
-copy-ready workflow using GitHub's official SARIF upload action.
-See the [email JSON and SARIF examples](docs/EMAIL_OUTPUT_EXAMPLES.md) for
-generated SPF, DKIM, and DMARC output and its authentication trust boundary.
-See [common use cases](docs/USE_CASES.md) for CI scanning, SOC triage,
-education demos, email-authentication experiments, and benchmark work.
-See the [detection model documentation](docs/DETECTION_MODEL.md) for feature
-semantics, limitations, and the evidence required for scoring changes.
-
-## Domain Age (Opt-In)
-
-`--check-domain-age` looks up a URL's registration date via RDAP and weights
-recently-registered domains as more suspicious — a signal no other feature
-here can provide, since it depends on domain history rather than the URL
-string itself. It's the one PhishGuard feature that calls a third party (the
-free `rdap.org` RDAP bootstrap), so it's off by default and not available on
-`batch`, since that free service rate-limits aggressively under repeated
-lookups. Use it on single URLs or `.eml` files you actually want a second
-opinion on:
-
-```bash
-phishguard url "http://freshly-registered.example" --check-domain-age --verbose
-phishguard eml suspicious.eml --check-domain-age
-```
-
-Every lookup failure (timeout, no RDAP record for that TLD, rate limiting)
-degrades to "no signal" rather than an error, and results are cached per
-domain for the run so a `.eml` file with many links to the same domain only
-triggers one lookup. See
-[the detection model's Domain Age section](docs/DETECTION_MODEL.md#domain-age-rdap)
-for the weight rationale and a live-traffic validation, and
-`tools/evaluate_live_traffic_benchmark.py --check-domain-age` to reproduce it
-yourself with a rate-limit-friendly delay.
-
-## Browser Demo
-
-`web/` is a small, self-contained browser UI — paste a URL or email and get
-a verdict with a feature breakdown. Scoring runs entirely client-side via
-`web/scoring.js`, a JavaScript port of the same heuristic model, verified
-against the Python original by `tests/test_js_parity.py` (both
-implementations are run on shared cases and the suite fails if they ever
-disagree). Nothing you type leaves the browser, and there's nothing to host
-or keep running — it's plain HTML/CSS/JS with no build step and no
-dependencies, deployable anywhere static files can be served (GitHub Pages,
-etc.).
-
-Open `web/index.html` directly, or serve the repo locally, to try it.
-
-## Browser Extension
-
-`browser-extension/chromium/` is an unpacked Chrome/Edge extension prototype
-for everyday use. Open a page, click the PhishGuard AI extension icon, and
-check the current tab URL with the same offline JavaScript scoring model used
-by the browser demo. Users can also paste a URL into the popup before visiting
-it.
-
-The extension does not request browsing history, does not scan in the
-background, and does not call a lookup server. See the
-[browser extension guide](docs/BROWSER_EXTENSION.md) for local install steps
-and current limits.
-
-## REST API Server
-
-For SIEM and proxy integrations that want a long-running scoring endpoint
-instead of shelling out to the CLI per lookup, run PhishGuard AI as a local
-HTTP server. It uses only the Python standard library — no new dependencies.
-The server also serves the same browser demo UI at `/`, plus redirect-chain
-resolution, which the static client-side demo can't do (following short
-links needs a real server-side request).
+For local service integrations:
 
 ```bash
 phishguard serve --port 8765
-# Then open http://127.0.0.1:8765/ in a browser
-```
-
-```bash
-# Health check
 curl http://127.0.0.1:8765/healthz
-
-# Score a URL (add "follow_redirects": N to resolve short links first,
-# or "check_domain_age": true to weight recently-registered domains —
-# see the Domain Age section above for what that trades away)
 curl -X POST http://127.0.0.1:8765/v1/url \
   -H "Content-Type: application/json" \
   -d '{"url": "http://paypa1-secure-login.xyz/verify"}'
-
-# Score an email
-curl -X POST http://127.0.0.1:8765/v1/email \
-  -H "Content-Type: application/json" \
-  -d '{"subject": "URGENT: verify your account", "body": "Click here now", "authentication_results": "mx.example; spf=fail; dkim=fail; dmarc=fail"}'
 ```
 
-The server binds to `127.0.0.1` by default and has no authentication of its
-own — only pass `--host` to expose it more broadly if you put it behind your
-own network controls and authentication. `POST /v1/*` is rate-limited per
-client IP (`--rate-limit`, default 30 requests/60s; pass `0` to disable) as
-a basic safeguard when clients connect directly. Disable this built-in
-limiter behind a reverse proxy unless you have a trusted-client-IP strategy;
-otherwise every visitor may share the proxy address and one visitor can
-throttle everyone.
-`render.yaml` in the repo root is a ready-to-use [Render](https://render.com)
-Blueprint if you want to self-host it; any host that can run a long-lived
-Python process works the same way, with no database or persistent state to
-provision.
+The server binds to `127.0.0.1` by default and has no authentication. Review
+the network controls before exposing it beyond the local machine.
 
-## Reproducible Benchmark
+## Detection Model and Privacy
 
-Run the public-safe URL regression fixture with:
+PhishGuard applies a hand-tuned heuristic model to explainable URL and email
+features, including:
+
+- hostname structure, entropy, IP literals, suspicious TLDs, and path depth;
+- phishing keywords, typosquatting distance, IDN signals, and free hosting;
+- email urgency, link density, attachment language, and capitalization;
+- optional SPF, DKIM, and DMARC results supplied by a trusted receiver.
+
+Default scoring is local. The opt-in `--check-domain-age` option performs an
+RDAP lookup through `rdap.org`; failures degrade to “no signal.” Redirect
+resolution also requires network access and includes SSRF protections.
+
+Read [Detection Model](docs/DETECTION_MODEL.md) for weights, trust boundaries,
+known blind spots, and the requirements for scoring changes.
+
+## Evidence and Limitations
+
+The checked-in regression fixture currently reports 7 true positives, 7 true
+negatives, 0 false positives, and 0 false negatives. A separate public-safe
+fixture reports 5 true positives and 5 true negatives. These small fixtures
+detect regressions; they are not population-level accuracy or calibration
+claims.
+
+Realistic stress testing also preserves three known false-positive cases in an
+eight-case branded-path fixture. Those gaps are documented instead of hidden.
+For dated live-traffic results, methodology, and rerun commands, see:
+
+- [Project Evidence](docs/PROJECT_EVIDENCE.md)
+- [Benchmark](docs/BENCHMARK.md)
+- [Public Evidence and Adoption](docs/PUBLIC_EVIDENCE.md)
+- [Detection Model](docs/DETECTION_MODEL.md)
+
+Run the local verification yourself:
 
 ```bash
+python -m unittest discover -s tests -v
+python tools/repository_policy.py
 python tools/evaluate_url_benchmark.py
 python tools/evaluate_url_benchmark.py data/public_benchmark_urls.jsonl
 ```
 
-The command reports ordered predictions, confusion-matrix counts, precision,
-recall, and false-positive rate. These are fixture metrics for detecting
-regressions, not population-level accuracy or calibration estimates. See the
-[benchmark documentation](docs/BENCHMARK.md) for the synthetic fixture, the
-licensed URL-Phish-derived slice, safe-case contribution guidance,
-sanitization, and reporting rules.
+## Documentation
 
-## Example Output
-
-```
-  PHISHGUARD AI
-  Explainable phishing detection
-
-------------------------------------------------------------
-  URL     : http://paypa1-secure-login.xyz/verify
-  Verdict : PHISHING
-  Risk    : ####################  94.2%
-
-  Feature breakdown:
-    url_length           : 38
-    has_ip_address       : 0
-    suspicious_tld       : 1   *
-    phishing_keywords    : 2   *
-    has_https            : 0   *
-    url_entropy          : 3.84 *
-```
-
-## Architecture
-
-```
-phishguard-ai/
-|-- phishguard.py    # CLI entrypoint - commands: url, email, eml, batch, serve
-|-- email_auth.py    # SPF, DKIM, and DMARC result parsing
-|-- features.py      # Feature extraction (URL + email)
-|-- model.py         # Weighted scoring model + sigmoid normalisation
-|-- redirect.py       # Optional SSRF-safe HTTP redirect-chain resolution
-|-- domain_age.py    # Optional RDAP domain-age lookup
-|-- server.py        # Optional REST API + browser-demo server
-|-- reporting.py     # Native JSON and SARIF 2.1.0 serialization
-|-- data/
-|   `-- urls.txt     # Sample URLs for batch testing
-`-- README.md
-```
+| Guide | Purpose |
+| --- | --- |
+| [Use Cases](docs/USE_CASES.md) | CI, SOC triage, education, email authentication, and benchmark workflows |
+| [Development](docs/DEVELOPMENT.md) | Local setup, verification, and architecture boundaries |
+| [Browser Extension](docs/BROWSER_EXTENSION.md) | Install and evaluate the Chrome/Edge prototype |
+| [Windows Install](docs/WINDOWS_INSTALL.md) | Verify the release on Windows |
+| [Support](SUPPORT.md) | Ask questions, report bugs, or disclose vulnerabilities |
+| [Roadmap](ROADMAP.md) | Current priorities and planned work |
 
 ## Contributing
 
-Contributions are welcome from security analysts, Python developers, students,
-researchers, and first-time open-source contributors.
+Contributions from security analysts, Python developers, students, researchers,
+and first-time open-source contributors are welcome.
 
-- Read [CONTRIBUTING.md](CONTRIBUTING.md) before starting.
-- Follow the short [first-contribution guide](docs/FIRST_CONTRIBUTION.md).
-- Follow the reproducible [development workflow](docs/DEVELOPMENT.md).
-- Pick a scoped task from the
-  [`good first issue` list](https://github.com/omobolajiadeyan/phishguard-ai/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22).
-- Use [Discussions](https://github.com/omobolajiadeyan/phishguard-ai/discussions)
-  for design questions and detection ideas.
-- See [SUPPORT.md](SUPPORT.md) for the right place to ask questions, report
-  bugs, or disclose vulnerabilities.
-- See [ROADMAP.md](ROADMAP.md) for current priorities.
-- Accepted contributors are credited in [AUTHORS.md](AUTHORS.md).
-- Releases and notable changes are recorded in [CHANGELOG.md](CHANGELOG.md).
-- Release artifacts follow the documented [release process](docs/RELEASING.md)
-  with checksums and signed build provenance.
+Start with [CONTRIBUTING.md](CONTRIBUTING.md), the
+[first-contribution guide](docs/FIRST_CONTRIBUTION.md), and a scoped
+[`good first issue`](https://github.com/omobolajiadeyan/phishguard-ai/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22).
+Security issues should follow [SECURITY.md](SECURITY.md), not a public issue.
 
-## Project Leadership
+## Maintainer and License
 
-- **Creator and Lead Maintainer:** [Omobolaji Adeyan](https://github.com/omobolajiadeyan)
-- **LinkedIn:** [linkedin.com/in/oeadeyan](https://www.linkedin.com/in/oeadeyan)
-- **Security contact:** [omobolaji.adeyan@gmail.com](mailto:omobolaji.adeyan@gmail.com)
+Created and maintained by
+[Omobolaji Adeyan](https://github.com/omobolajiadeyan), cybersecurity engineer.
 
-A [FreNiMi](https://frenimi.com) product.
+[GitHub](https://github.com/omobolajiadeyan) ·
+[Website](https://omobolajiadeyan.com) ·
+[LinkedIn](https://www.linkedin.com/in/oeadeyan) ·
+[Security contact](mailto:omobolaji.adeyan@gmail.com)
 
-## Part of the Security Automation Toolkit
-
-PhishGuard AI is the flagship of a practical security-automation toolkit. The others:
-
-- **[Secrets Scanner](https://github.com/omobolajiadeyan/secrets-scanner)** — exposed-credential detection with redacted SARIF/JSON evidence
-- **[Log Analyzer](https://github.com/omobolajiadeyan/log-analyzer)** — MITRE ATT&CK-mapped log threat detection
-- **[BehaviorSense](https://github.com/omobolajiadeyan/behaviorsense)** — UEBA-style behavioral anomaly detection
-- **[CVE Dashboard](https://github.com/omobolajiadeyan/cve-dashboard)** — live NVD vulnerability intelligence
-- **[VulnGPT](https://github.com/omobolajiadeyan/vulngpt)** — CVE-to-remediation triage assistant
-
-Full portfolio: [github.com/omobolajiadeyan](https://github.com/omobolajiadeyan)
-
-## Author
-
-**Omobolaji Adeyan** - Cybersecurity Engineer
-[GitHub](https://github.com/omobolajiadeyan) · [Website](https://omobolajiadeyan.com)
-
-## License and Citation
-
-PhishGuard AI is available under the [MIT License](LICENSE). The project may
-be cited using the metadata in [CITATION.cff](CITATION.cff).
+A [FreNiMi](https://frenimi.com) product, released under the
+[MIT License](LICENSE). Citation metadata is available in [CITATION.cff](CITATION.cff).

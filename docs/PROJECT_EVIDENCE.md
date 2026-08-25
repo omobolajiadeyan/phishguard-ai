@@ -165,7 +165,7 @@ current values.
 
 ## Demonstration
 
-![PhishGuard safe-input and phishing-input terminal comparison](assets/phishguard-demo.svg)
+![PhishGuard safe-input and phishing-input terminal comparison](assets/phishguard-demo.svg?v=20260824-2)
 
 The screenshot was prepared from the real output of:
 
