@@ -43,6 +43,20 @@ All notable changes to PhishGuard AI are documented here.
 
 ### Fixed
 
+- **CLI verbose output's `*` risk marker now checks the actual feature
+  weight sign** (`URL_WEIGHTS`), not just whether the value is positive.
+  Found while verifying `docs/assets/phishguard-demo.svg` was still
+  accurate: `domain_length` carries a negative weight (a longer domain is
+  slightly *safer*), so it was mismarked as a risk contributor for every
+  real hostname, with a hardcoded `has_https` exception papering over the
+  one case anyone had noticed. The same bug this session's web UI redesign
+  (#104) already fixed in `app.js` — the CLI had never gotten the matching
+  fix. New test: `test_verbose_marker_reflects_weight_sign_not_just_value`.
+- **Regenerated the stale demo evidence** (`docs/assets/phishguard-demo.svg`):
+  the SAFE example's risk score (34.7%) predated this session's
+  query-string-scoping fix and no longer matched real CLI output (now
+  25.3%, still `SAFE`). The PHISHING example's 98.8% was unaffected and
+  unchanged. Also updated the "Generated" date.
 - **`domain_age.py`'s RDAP request re-validates the domain at the network
   call itself** (`_fetch_registration_age_days`), not just in its caller.
   CodeQL alert #16 (`py/partial-ssrf`) stayed open even after #102's
