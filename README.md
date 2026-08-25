@@ -46,7 +46,8 @@ and exact reproduction commands.
 
 - **Explainable by default:** each result includes the URL, verdict, risk score,
   and triggered evidence.
-- **Offline and private:** no input is sent to an external API.
+- **Offline and private by default:** no input is sent to an external API
+  unless you explicitly enable the RDAP-backed domain-age check.
 - **CI friendly:** JSON and SARIF output work in automation and security review.
 - **Zero runtime dependencies:** useful for restricted environments.
 - **Conservative email-auth scoring:** SPF, DKIM, and DMARC failures are
@@ -104,7 +105,8 @@ validated as a statistically trained model.
 - JSON export for integration into SOC workflows
 - SARIF 2.1.0 export for GitHub Code Scanning and CI security pipelines
 - Zero dependencies - pure Python standard library
-- Offline - no data sent anywhere
+- Offline by default - no data is sent anywhere unless you opt into domain-age
+  checks
 
 ## Try It in One Minute
 

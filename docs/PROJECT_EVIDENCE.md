@@ -5,12 +5,12 @@ PhishGuard AI. Counts are a dated snapshot, not claims of production adoption.
 
 ## Technical Evidence
 
-Snapshot re-verified twice on August 24, 2026 (previous snapshot: July 28,
-2026): once against `main` after #99–#103 (the false-positive
-rearchitecture — see "False-Positive Rearchitecture Evidence" below), and
-again, independently, after #104 (a browser-demo UI redesign) landed — a
-full retest confirming the rearchitecture's numbers still held after an
-unrelated change, not just immediately after the fix shipped:
+Snapshot re-verified three times on August 24, 2026 (previous snapshot: July
+28, 2026): once against `main` after #99–#103 (the false-positive
+rearchitecture — see "False-Positive Rearchitecture Evidence" below), again
+after #104 (a browser-demo UI redesign), and once more after #107 corrected
+CLI explainability markers and refreshed the demo evidence. The latest run
+covered the complete 199-test suite:
 
 - URL regression fixture: 14 public-safe samples
 - Confusion matrix: 7 true positives, 7 true negatives, 0 false positives,
@@ -22,7 +22,7 @@ unrelated change, not just immediately after the fix shipped:
   branded-path samples) guards the false-positive fix specifically: 5/8
   clean, 3/8 a known, named, still-open gap (see below) — not hidden by a
   weakened test.
-- Full test suite: 197/197 passing (2 skipped, 1 deliberately tracked
+- Full test suite: 199/199 passing (2 skipped, 1 deliberately tracked
   `expectedFailure` for the named open gap), run locally via
   `python -m unittest discover -s tests`
 - Supported Python versions in CI: 3.10, 3.11, 3.12, and 3.13

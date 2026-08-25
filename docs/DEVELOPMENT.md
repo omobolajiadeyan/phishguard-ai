@@ -52,7 +52,9 @@ first-time contributor workflows require maintainer approval.
 Compile every runtime module:
 
 ```bash
-python -m py_compile email_auth.py features.py model.py phishguard.py reporting.py
+python -m py_compile \
+  domain_age.py email_auth.py features.py model.py phishguard.py \
+  psl.py redirect.py reporting.py server.py
 ```
 
 When changing package metadata, installation, or release behavior, also run:
