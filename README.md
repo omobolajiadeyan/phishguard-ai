@@ -7,8 +7,8 @@
 [![Marketplace](https://img.shields.io/badge/GitHub-Marketplace-2088FF?style=flat-square&logo=github)](https://github.com/marketplace/actions/phishguard-ai-phishing-detector)
 [![Contributions](https://img.shields.io/badge/Contributions-Welcome-2ea44f?style=flat-square)](CONTRIBUTING.md)
 
-Explainable phishing detection for URLs and email—offline by default, with no
-API key and no runtime dependencies.
+**See the signals behind the verdict.** Explainable phishing detection for URLs
+and email—offline by default, with no API key and no runtime dependencies.
 
 PhishGuard AI turns structural URL signals and email indicators into a
 reviewable risk score, verdict, and feature-level explanation. Run it from a
@@ -28,9 +28,19 @@ latest validation completed 199 tests with 2 skips and 1 tracked expected
 failure. Reproduction commands and limitations are recorded in
 [Project Evidence](docs/PROJECT_EVIDENCE.md).
 
-## Why PhishGuard
+## From input to reviewable evidence
 
-| Capability | What it provides |
+```text
+URL / email  →  local feature extraction  →  explainable risk score
+                                                   ↓
+                     CLI · JSON · SARIF · API · browser · GitHub Actions
+```
+
+PhishGuard is built for the moment after a scanner says “suspicious”: an
+engineer still needs to understand the signal, reproduce the result, and route
+the evidence into an existing workflow.
+
+| Engineering need | What PhishGuard provides |
 | --- | --- |
 | Explainable scoring | `SAFE`, `SUSPICIOUS`, or `PHISHING` with the signals that affected the result |
 | Private by default | URL and email scoring runs locally; only opt-in RDAP domain-age checks use a third party |
