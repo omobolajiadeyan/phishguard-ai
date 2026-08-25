@@ -26,11 +26,13 @@ accuracy claim and should not be presented as independent model validation.
 Separately, [BENCHMARK.md](BENCHMARK.md) also records live-traffic
 validation runs against real, rotating public feeds (OpenPhish phishing
 URLs, Tranco top-domain legitimate URLs) — most recently on 2026-08-24,
-showing the opt-in domain-age check raising recall from 55.0% to 65.7% with
-zero new false positives. This is closer to real-world signal than the
-fixture, but it's still a few-hundred-URL sample against two specific public
-feeds on one date, not a comprehensive accuracy claim — treat it the same
-way: reproducible, dated, and bounded, not definitive.
+showing the opt-in domain-age check raising flagged recall from 55.7%
+(167/300) to 59.0% (177/300). The corresponding legitimate-site checks found
+0 false positives among 1,000 offline samples and 0 among the 300-domain
+RDAP-enabled sample. This is closer to real-world signal than the fixture,
+but it is still a bounded sample against two specific public feeds, not a
+comprehensive accuracy claim — treat it the same way: reproducible, dated,
+and bounded, not definitive.
 
 **A 2026-08-24 self-audit found that every false-positive number above,
 including the "zero new false positives" claim, was measured against bare
@@ -85,4 +87,3 @@ phishing.
 
 Contributions that improve tests, documentation, parser safety, SARIF output,
 or benchmark transparency are preferred over broad model changes.
-
