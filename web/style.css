@@ -75,9 +75,14 @@ body {
 }
 
 header,
-main,
 footer {
-  max-width: 620px;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+main {
+  max-width: 660px;
   margin: 0 auto;
   padding: 0 1.25rem;
 }
@@ -85,8 +90,8 @@ footer {
 /* --- Header / brand --- */
 
 .site-header {
-  padding-top: 3rem;
-  padding-bottom: 1.75rem;
+  padding-top: clamp(3rem, 8vw, 6rem);
+  padding-bottom: 3rem;
   text-align: center;
 }
 
@@ -110,14 +115,32 @@ h1 {
   letter-spacing: -0.02em;
 }
 
+.site-header h2 {
+  max-width: 720px;
+  margin: 1.25rem auto 0;
+  font-size: clamp(2.35rem, 7vw, 4.6rem);
+  line-height: 1.02;
+  letter-spacing: -0.055em;
+}
+
+.eyebrow {
+  margin: 1.75rem 0 0;
+  color: var(--accent-strong);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.13em;
+}
+
 .brand-accent {
   color: var(--accent);
 }
 
 .tagline {
   color: var(--text-dim);
-  font-size: 0.95rem;
-  margin: 0.6rem 0 0;
+  font-size: 1.05rem;
+  max-width: 610px;
+  margin: 1.25rem auto 0;
 }
 
 .tagline a {
@@ -129,6 +152,66 @@ h1 {
 .tagline a:hover {
   text-decoration: underline;
 }
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin-top: 1.6rem;
+}
+
+.header-actions a {
+  color: var(--accent-strong);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.header-actions .primary-link {
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  padding: 0.7rem 1rem;
+}
+
+.trust-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 680px;
+  margin: 3rem auto 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface) 76%, transparent);
+}
+
+.trust-strip li {
+  padding: 1rem;
+}
+
+.trust-strip li + li {
+  border-left: 1px solid var(--border);
+}
+
+.trust-strip strong,
+.trust-strip span {
+  display: block;
+}
+
+.trust-strip strong { font-size: 0.87rem; }
+.trust-strip span { color: var(--text-faint); font-size: 0.74rem; margin-top: 0.18rem; }
+
+.section-intro {
+  margin-bottom: 1.25rem;
+}
+
+.section-intro .eyebrow { margin-top: 0; }
+.section-intro h2,
+.how-it-works h2 { margin: 0.35rem 0 0; font-size: 1.55rem; letter-spacing: -0.025em; }
+.section-intro > p:last-child { color: var(--text-dim); margin: 0.5rem 0 0; }
 
 /* --- Check card (tabs + forms) --- */
 
@@ -286,6 +369,38 @@ button[type="submit"]:focus-visible {
   box-shadow: var(--shadow-card);
   padding: 1.4rem 1.5rem;
   animation: rise 0.25s ease both;
+}
+
+.how-it-works {
+  max-width: 660px;
+  margin: 4rem auto 0;
+  padding: 0 1.25rem;
+}
+
+.how-it-works ol {
+  margin: 1.4rem 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--border);
+}
+
+.how-it-works li {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  gap: 0.8rem;
+  padding: 1.1rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.how-it-works li > span { color: var(--accent); font-family: var(--font-mono); font-size: 0.75rem; }
+.how-it-works strong { font-size: 0.95rem; }
+.how-it-works li p { color: var(--text-dim); font-size: 0.86rem; margin: 0.2rem 0 0; }
+
+@media (max-width: 520px) {
+  .site-header { padding-bottom: 2.25rem; }
+  .trust-strip { grid-template-columns: 1fr; }
+  .trust-strip li { display: grid; grid-template-columns: 1fr 1.5fr; text-align: left; }
+  .trust-strip li + li { border-left: 0; border-top: 1px solid var(--border); }
 }
 
 @media (prefers-reduced-motion: reduce) {

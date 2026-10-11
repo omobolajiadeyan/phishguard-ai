@@ -17,13 +17,26 @@
       </svg>
       <h1>PhishGuard<span class="brand-accent">AI</span></h1>
     </div>
-    <p class="tagline">
-      Explainable, offline phishing detection for URLs and email — zero runtime dependencies.
-      <a href="https://github.com/omobolajiadeyan/phishguard-ai" target="_blank" rel="noopener">Source on GitHub<span aria-hidden="true"> &rarr;</span></a>
-    </p>
+    <p class="eyebrow">LOCAL-FIRST SECURITY ANALYSIS</p>
+    <h2>See the signals behind the verdict.</h2>
+    <p class="tagline">Analyze a URL or email without sending it to a third-party service. PhishGuard turns structural signals into a risk score you can inspect.</p>
+    <div class="header-actions">
+      <a class="primary-link" href="#scanner">Analyze a sample</a>
+      <a href="https://github.com/omobolajiadeyan/phishguard-ai" target="_blank" rel="noopener">Review the source<span aria-hidden="true"> &rarr;</span></a>
+    </div>
+    <ul class="trust-strip" aria-label="Product properties">
+      <li><strong>Local</strong><span>Browser scoring</span></li>
+      <li><strong>Explainable</strong><span>Feature-level reasons</span></li>
+      <li><strong>Portable</strong><span>CLI · API · SARIF</span></li>
+    </ul>
   </header>
 
   <main>
+    <section class="section-intro" id="scanner">
+      <p class="eyebrow">INTERACTIVE SCANNER</p>
+      <h2>Inspect a message or destination</h2>
+      <p>Start with the synthetic examples already provided, or enter your own input. Nothing entered here leaves your browser.</p>
+    </section>
     <div class="check-card">
       <nav class="tabs" role="tablist">
         <button type="button" id="tab-url" class="tab active" data-tab="url" role="tab" aria-selected="true" aria-controls="panel-url">URL</button>
@@ -85,6 +98,16 @@
 
     <p id="error" class="error hidden" role="alert"></p>
   </main>
+
+  <section class="how-it-works" aria-labelledby="how-title">
+    <p class="eyebrow">REVIEWABLE BY DESIGN</p>
+    <h2 id="how-title">From signal to evidence</h2>
+    <ol>
+      <li><span>01</span><div><strong>Extract</strong><p>Inspect URL structure, content patterns, and supplied email-authentication results.</p></div></li>
+      <li><span>02</span><div><strong>Explain</strong><p>Show which features contributed to the heuristic score and verdict.</p></div></li>
+      <li><span>03</span><div><strong>Integrate</strong><p>Use the same model through Python, CLI, REST, JSON, SARIF, or GitHub Actions.</p></div></li>
+    </ol>
+  </section>
 
   <footer>
     <p>
